@@ -4,10 +4,11 @@ namespace App\Models;
 
 use App\Traits\Translatable;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Popup extends Model
 {
-    use Translatable;
+    use SoftDeletes, Translatable;
     protected $fillable = [
         'title',
         'content',

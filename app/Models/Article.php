@@ -4,11 +4,12 @@ namespace App\Models;
 
 use App\Traits\Translatable;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
 class Article extends Model
 {
-    use Translatable;
+    use SoftDeletes, Translatable;
 
     protected $fillable = [
         'title', 'slug', 'content', 'excerpt', 'image', 'og_image', 'alt_text', 'pexels_photo_id',
