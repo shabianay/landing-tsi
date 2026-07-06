@@ -80,12 +80,26 @@ class ArticleSeeder extends Seeder
                 'is_published' => true,
                 'published_at' => now()->subDays(10),
             ],
+            [
+                'title' => '5 Strategi Digital Marketing Efektif untuk Bisnis di Indonesia',
+                'slug' => '5-strategi-digital-marketing-efektif-untuk-bisnis-di-indonesia',
+                'content' => "Di era digital seperti sekarang, memiliki strategi digital marketing yang tepat sangat penting untuk kesuksesan bisnis Anda. Berikut adalah 5 strategi digital marketing efektif yang bisa Anda terapkan untuk bisnis di Indonesia.\n\n1. Manfaatkan Media Sosial untuk Meningkatkan Engagement\nMedia sosial seperti Instagram, Facebook, dan TikTok adalah platform yang sangat efektif untuk menjangkau target pasar Anda. Gunakan konten yang menarik dan relevan, seperti video pendek, gambar, atau infografis, untuk meningkatkan engagement dengan pelanggan.\n\n2. Optimalkan SEO untuk Meningkatkan Visibilitas Website\nSearch Engine Optimization (SEO) adalah kunci untuk membuat website bisnis Anda muncul di halaman pertama hasil pencarian Google. Fokus pada penggunaan kata kunci yang relevan, konten berkualitas, dan struktur website yang mudah dinavigasi.\n\n3. Gunakan Email Marketing untuk Membangun Hubungan dengan Pelanggan\nEmail marketing masih menjadi salah satu strategi digital marketing yang paling efektif. Kirim newsletter, promo, atau konten eksklusif kepada pelanggan Anda untuk menjaga hubungan dan meningkatkan loyalitas merek.\n\n4. Investasikan dalam Iklan Berbayar (PPC)\nIklan berbayar seperti Google Ads atau Facebook Ads bisa membantu Anda menjangkau audiens yang lebih spesifik. Dengan budget yang tepat, Anda bisa mendapatkan ROI yang tinggi dari kampanye iklan ini.\n\n5. Manfaatkan Konten Blog untuk Mendidik dan Menarik Pelanggan\nBlog adalah alat yang powerful untuk membangun otoritas di industri Anda. Buat konten yang informatif dan bermanfaat untuk menarik traffic organik dan membangun kepercayaan pelanggan.\n\nDengan menerapkan kelima strategi digital marketing ini, bisnis Anda bisa lebih kompetitif di pasar Indonesia. Mulailah dengan satu strategi terlebih dahulu, ukur hasilnya, dan terus tingkatkan upaya pemasaran digital Anda.",
+                'excerpt' => 'Temukan 5 strategi digital marketing yang terbukti efektif untuk meningkatkan penjualan bisnis Anda di Indonesia.',
+                'author' => 'The Solution ID',
+                'category' => 'SEO',
+                'tags' => 'digital marketing, bisnis online, strategi pemasaran, bisnis Indonesia, pemasaran digital',
+                'seo_title' => '5 Strategi Digital Marketing Efektif untuk Bisnis Indonesia',
+                'seo_description' => 'Pelajari 5 strategi digital marketing yang bisa langsung Anda terapkan untuk meningkatkan penjualan bisnis di Indonesia.',
+                'seo_keywords' => 'digital marketing, strategi pemasaran, bisnis online, pemasaran digital, bisnis Indonesia',
+                'is_published' => true,
+                'published_at' => now()->subDays(0),
+            ],
         ];
 
         foreach ($articles as $data) {
             Article::create($data);
         }
 
-        $this->command->info('5 articles seeded successfully!');
+        $this->command->info('6 articles seeded successfully!');
     }
 }

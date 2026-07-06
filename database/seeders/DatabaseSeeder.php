@@ -18,8 +18,9 @@ class DatabaseSeeder extends Seeder
         // User::factory(10)->create();
 
         User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+            'name' => 'Admin',
+            'email' => 'admin@thesolutionid.com',
+            'is_admin' => true,
         ]);
 
         $this->call([
@@ -28,6 +29,8 @@ class DatabaseSeeder extends Seeder
             TestimonialSeeder::class,
             ArticleSeeder::class,
             InitialDataSeeder::class,
+            FaqSeeder::class,
+            PopupSeeder::class,
             TranslationSeeder::class,
             EnglishTranslationSeeder::class,
             ArticleTranslationSeeder::class,

@@ -11,9 +11,7 @@ class FillArticleImages
 {
     public function handle(): int
     {
-        $articles = Article::whereNotNull('image')
-            ->orWhereNull('image')
-            ->get();
+        $articles = Article::whereNull('image')->get();
         $updated = 0;
         $total = $articles->count();
         Log::info("FillArticleImages: memproses {$total} artikel.");
