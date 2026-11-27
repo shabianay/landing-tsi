@@ -18,6 +18,9 @@ use InvalidArgumentException;
  */
 class SimProyekImporter
 {
+    /** Accepted payload sources: the old SIM-Proyek app, and invoices recovered from the PDF archive. */
+    public const SOURCES = ['SIM-Proyek', 'Arsip Invoice PDF'];
+
     private const SETTING_MAP = [
         'company_name' => 'invoice_company_name',
         'company_address' => 'invoice_company_address',
@@ -25,18 +28,21 @@ class SimProyekImporter
         'company_email' => 'invoice_company_email',
         'invoice_footer' => 'invoice_footer',
         'payment_info' => 'invoice_payment_info',
+        'payment_note' => 'invoice_payment_note',
     ];
 
     /** @return array{clients:int, orders:int, invoices:int, items:int, logs:int, settings:int, skipped:int} */
     public function import(array $payload, ?int $userId = null): array
     {
-        if (($payload['source'] ?? null) !== 'SIM-Proyek') {
-            throw new InvalidArgumentException('File ini bukan ekspor SIM-Proyek.');
+        if (! in_array($payload['source'] ?? null, self::SOURCES, true)) {
+            throw new InvalidArgumentException('File ini bukan ekspor SIM-Proyek atau arsip invoice.');
         }
+        // An archive export may replace invoice settings that are already filled in.
+        $overrideSettings = (bool) ($payload['override_settings'] ?? false);
 
         $count = ['clients' => 0, 'orders' => 0, 'invoices' => 0, 'items' => 0, 'logs' => 0, 'settings' => 0, 'skipped' => 0];
 
-        DB::transaction(function () use ($payload, $userId, &$count) {
+        DB::transaction(function () use ($payload, $userId, $overrideSettings, &$count) {
             $clientMap = [];
             foreach ($payload['clients'] ?? [] as $row) {
                 $existing = OrderClient::where('name', $row['name'])
@@ -128,7 +134,7 @@ class SimProyekImporter
 
             foreach (self::SETTING_MAP as $from => $to) {
                 $value = $payload['settings'][$from] ?? null;
-                if (filled($value) && blank(Setting::get($to))) {
+                if (filled($value) && ($overrideSettings || blank(Setting::get($to)))) {
                     Setting::updateOrCreate(['key' => $to], ['value' => $value, 'group' => 'invoice', 'label' => InvoiceController::SETTINGS[$to] ?? $to]);
                     $count['settings']++;
                 }
