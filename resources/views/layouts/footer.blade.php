@@ -17,14 +17,15 @@
             <ul class="mt-4 space-y-1">
                 @foreach ([
                     ['home', __('Beranda')],
-                    ['services.android', __('Aplikasi Android')],
+                    ['home', __('Layanan'), '#jasa'],
                     ['portfolio.index', __('Portfolio')],
                     ['articles.index', __('Artikel')],
                     ['jobs.index', __('Karier')],
                     ['about', __('Tentang')],
                     ['contact', __('Kontak')],
-                ] as [$route, $label])
-                    <li><a href="{{ route($route) }}" class="inline-block py-1.5 text-dark-100 hover:text-dark-300 hover:underline">{{ $label }}</a></li>
+                ] as $link)
+                    @php [$route, $label] = $link; $fragment = $link[2] ?? ''; @endphp
+                    <li><a href="{{ route($route) . $fragment }}" class="inline-block py-1.5 text-dark-100 hover:text-dark-300 hover:underline">{{ $label }}</a></li>
                 @endforeach
             </ul>
         </nav>

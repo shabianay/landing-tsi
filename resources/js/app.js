@@ -53,6 +53,17 @@ document.addEventListener('click', (event) => {
         return;
     }
 
+    // Links inside the mobile menu (e.g. "/#jasa" on the home page) may not reload the page: close it.
+    if (target.closest('#mobile-menu a')) {
+        const menu = document.getElementById('mobile-menu');
+        const toggle = document.querySelector('[data-toggle-mobile-menu]');
+        menu?.classList.add('hidden');
+        document.documentElement.classList.remove('overflow-hidden');
+        toggle?.setAttribute('aria-expanded', 'false');
+        toggle?.querySelector('[data-menu-icon="open"]')?.classList.remove('hidden');
+        toggle?.querySelector('[data-menu-icon="close"]')?.classList.add('hidden');
+    }
+
     const submitter = target.closest('[data-submit-parent-form]');
     if (submitter) {
         event.preventDefault();
