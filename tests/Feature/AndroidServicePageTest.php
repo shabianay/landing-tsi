@@ -13,11 +13,13 @@ class AndroidServicePageTest extends TestCase
     {
         $this->get(route('services.android'))
             ->assertOk()
-            ->assertSee('Aplikasi Android')
-            ->assertSee('File APK siap install')
-            ->assertSee('Bantu upload ke Play Store')
+            ->assertSee('Aplikasi Android untuk bisnis Anda.')
+            ->assertSee('file APK')
+            ->assertSee('source code lengkap')
+            ->assertSee('Play Store')
             ->assertSee('Kasir (POS)')
-            ->assertSee('Konversi Website ke Aplikasi');
+            ->assertSee('Konversi Website ke Aplikasi')
+            ->assertSee('Lainnya (Konsultasi Dulu)');
     }
 
     public function test_android_page_is_linked_from_home_nav_and_sitemap(): void
@@ -31,7 +33,7 @@ class AndroidServicePageTest extends TestCase
         $this->withSession(['locale' => 'en'])
             ->get(route('services.android'))
             ->assertOk()
-            ->assertSee('Ready-to-install APK file')
-            ->assertSee('Apps We Can Build');
+            ->assertSee('Android apps for your business.')
+            ->assertSee('From idea to Play Store');
     }
 }
