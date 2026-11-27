@@ -67,12 +67,12 @@
             <div class="border-t border-line bg-dark-50/60">
                 <div class="wrap py-8 md:py-10">
                     <h2 class="text-sm font-semibold text-dark-100">{{ __('Dipercaya oleh') }}</h2>
-                    <ul class="mt-5 flex snap-x overflow-x-auto border-l border-t border-line md:grid md:grid-cols-4 md:overflow-visible lg:grid-cols-6">
+                    <ul class="mt-5 grid grid-cols-2 border-l border-t border-line sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
                         @foreach ($partners as $logo)
-                            <li class="flex h-24 w-40 shrink-0 snap-start items-center justify-center border-b border-r border-line bg-white px-5 md:w-auto">
+                            <li class="flex h-32 items-center justify-center border-b border-r border-line bg-white p-3 sm:h-36 lg:h-40 lg:p-4">
                                 @if ($logo->logo)
                                     <img src="{{ asset('storage/' . $logo->logo) }}" alt="{{ $logo->name }}" width="400" height="280"
-                                         class="max-h-14 w-auto max-w-full object-contain opacity-80 grayscale transition duration-300 hover:opacity-100 hover:grayscale-0"
+                                         class="h-full w-full object-contain transition duration-300 lg:grayscale lg:hover:grayscale-0"
                                          loading="lazy" decoding="async">
                                 @else
                                     <span class="text-center text-sm font-semibold text-dark-100">{{ $logo->name }}</span>
