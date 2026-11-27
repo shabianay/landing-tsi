@@ -6,9 +6,9 @@
 <div class="flex items-center justify-between mb-8">
     <div>
         <h1 class="text-2xl md:text-3xl font-bold text-dark-300 tracking-tight">{{ __('Artikel') }}</h1>
-        <p class="text-dark-100/50 mt-1 font-medium">{{ __('Kelola semua artikel blog dan konten') }}</p>
+        <p class="text-dark-100 mt-1 font-medium">{{ __('Kelola semua artikel blog dan konten') }}</p>
     </div>
-    <a href="{{ route('admin.articles.create') }}" class="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-500 text-white font-semibold rounded-xl shadow-lg shadow-primary-500/25 hover:bg-primary-600 hover:shadow-xl hover:shadow-primary-500/30 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 text-sm">
+    <a href="{{ route('admin.articles.create') }}" class="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-600 text-white font-semibold rounded-xl hover:bg-primary-700 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 text-sm">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
         {{ __('Tambah Artikel') }}
     </a>
@@ -21,11 +21,11 @@
     </div>
 @endif
 
-<div class="bg-white rounded-2xl border border-dark-100/5 shadow-sm overflow-hidden">
+<div class="bg-white rounded-2xl border border-line shadow-sm overflow-hidden">
     <div class="overflow-x-auto">
         <table class="w-full text-sm">
             <thead>
-                <tr class="bg-dark-50/50 border-b border-dark-100/5">
+                <tr class="bg-dark-50/50 border-b border-line">
                     <th class="text-left font-semibold text-dark-300 px-5 py-4">{{ __('Judul') }}</th>
                     <th class="text-left font-semibold text-dark-300 px-5 py-4 hidden sm:table-cell">{{ __('Kategori') }}</th>
                     <th class="text-left font-semibold text-dark-300 px-5 py-4 hidden md:table-cell">{{ __('Penulis') }}</th>
@@ -34,7 +34,7 @@
                     <th class="text-right font-semibold text-dark-300 px-5 py-4">{{ __('Aksi') }}</th>
                 </tr>
             </thead>
-            <tbody class="divide-y divide-dark-100/5">
+            <tbody class="divide-y divide-line">
                 @forelse($articles as $a)
                 <tr class="hover:bg-dark-50/30 transition-colors">
                     <td class="px-5 py-4">
@@ -42,13 +42,13 @@
                             @if($a->image)
                             <img src="{{ asset('storage/' . $a->image) }}" alt="" width="48" height="48" class="w-10 h-10 rounded-lg object-cover shrink-0">
                             @else
-                            <div class="w-10 h-10 rounded-lg bg-primary-100 flex items-center justify-center text-primary-500 font-bold shrink-0">{{ strtoupper(substr($a->trans('title'), 0, 1)) }}</div>
+                            <div class="w-10 h-10 rounded-lg bg-primary-100 flex items-center justify-center text-primary-600 font-bold shrink-0">{{ strtoupper(substr($a->trans('title'), 0, 1)) }}</div>
                             @endif
                             <span class="font-medium text-dark-300 line-clamp-1">{{ $a->trans('title') }}</span>
                         </div>
                     </td>
-                    <td class="px-5 py-4 text-dark-100/60 hidden sm:table-cell">{{ $a->category ?? '—' }}</td>
-                    <td class="px-5 py-4 text-dark-100/60 hidden md:table-cell">{{ $a->author }}</td>
+                    <td class="px-5 py-4 text-dark-100 hidden sm:table-cell">{{ $a->category ?? '—' }}</td>
+                    <td class="px-5 py-4 text-dark-100 hidden md:table-cell">{{ $a->author }}</td>
                     <td class="px-5 py-4 text-center">
                         @if($a->is_published)
                             <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-green-50 text-green-700">
@@ -62,7 +62,7 @@
                             </span>
                         @endif
                     </td>
-                    <td class="px-5 py-4 text-dark-100/60 hidden lg:table-cell text-xs">
+                    <td class="px-5 py-4 text-dark-100 hidden lg:table-cell text-xs">
                         @if($a->published_at)
                             {{ $a->published_at->format('d M Y H:i') }}
                         @else
@@ -90,10 +90,10 @@
                 <tr>
                     <td colspan="6" class="px-5 py-16 text-center">
                         <div class="w-16 h-16 bg-primary-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                            <svg class="w-8 h-8 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"/></svg>
+                            <svg class="w-8 h-8 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"/></svg>
                         </div>
-                        <p class="text-dark-100/60 font-medium">{{ __('Belum ada artikel.') }}</p>
-                        <a href="{{ route('admin.articles.create') }}" class="text-primary-500 font-semibold text-sm hover:underline mt-2 inline-block">{{ __('Tulis artikel pertama') }}</a>
+                        <p class="text-dark-100 font-medium">{{ __('Belum ada artikel.') }}</p>
+                        <a href="{{ route('admin.articles.create') }}" class="text-primary-600 font-semibold text-sm hover:underline mt-2 inline-block">{{ __('Tulis artikel pertama') }}</a>
                     </td>
                 </tr>
                 @endforelse
@@ -101,7 +101,7 @@
         </table>
     </div>
     @if($articles->hasPages())
-    <div class="px-5 py-4 border-t border-dark-100/5">
+    <div class="px-5 py-4 border-t border-line">
         {{ $articles->links() }}
     </div>
     @endif

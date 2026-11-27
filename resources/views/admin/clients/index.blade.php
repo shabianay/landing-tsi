@@ -6,9 +6,9 @@
 <div class="flex items-center justify-between mb-8">
     <div>
         <h1 class="text-2xl md:text-3xl font-bold text-dark-300 tracking-tight">{{ __('Klien') }}</h1>
-        <p class="text-dark-100/50 mt-1 font-medium">{{ __('Kelola data klien') }}</p>
+        <p class="text-dark-100 mt-1 font-medium">{{ __('Kelola data klien') }}</p>
     </div>
-    <a href="{{ route('admin.clients.create') }}" class="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-500 text-white font-semibold rounded-xl shadow-lg shadow-primary-500/25 hover:bg-primary-600 hover:shadow-xl hover:shadow-primary-500/30 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 text-sm">
+    <a href="{{ route('admin.clients.create') }}" class="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-600 text-white font-semibold rounded-xl hover:bg-primary-700 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 text-sm">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
         {{ __('Tambah Klien') }}
     </a>
@@ -21,11 +21,11 @@
     </div>
 @endif
 
-<div class="bg-white rounded-2xl border border-dark-100/5 shadow-sm overflow-hidden">
+<div class="bg-white rounded-2xl border border-line shadow-sm overflow-hidden">
     <div class="overflow-x-auto">
         <table class="w-full text-sm">
             <thead>
-                <tr class="bg-dark-50/50 border-b border-dark-100/5">
+                <tr class="bg-dark-50/50 border-b border-line">
                     <th class="text-left font-semibold text-dark-300 px-5 py-4">{{ __('Nama') }}</th>
                     <th class="text-left font-semibold text-dark-300 px-5 py-4 hidden sm:table-cell">{{ __('Email') }}</th>
                     <th class="text-left font-semibold text-dark-300 px-5 py-4 hidden md:table-cell">{{ __('Telepon') }}</th>
@@ -33,15 +33,15 @@
                     <th class="text-right font-semibold text-dark-300 px-5 py-4">{{ __('Aksi') }}</th>
                 </tr>
             </thead>
-            <tbody class="divide-y divide-dark-100/5">
+            <tbody class="divide-y divide-line">
                 @forelse($clients as $client)
                 <tr class="hover:bg-dark-50/30 transition-colors">
                     <td class="px-5 py-4">
                         <span class="font-medium text-dark-300">{{ $client->name }}</span>
                     </td>
-                    <td class="px-5 py-4 text-dark-100/60 hidden sm:table-cell">{{ $client->email ?? '—' }}</td>
-                    <td class="px-5 py-4 text-dark-100/60 hidden md:table-cell">{{ $client->phone ?? '—' }}</td>
-                    <td class="px-5 py-4 text-dark-100/60 hidden lg:table-cell max-w-[200px] truncate">{{ $client->website_url ?? '—' }}</td>
+                    <td class="px-5 py-4 text-dark-100 hidden sm:table-cell">{{ $client->email ?? '—' }}</td>
+                    <td class="px-5 py-4 text-dark-100 hidden md:table-cell">{{ $client->phone ?? '—' }}</td>
+                    <td class="px-5 py-4 text-dark-100 hidden lg:table-cell max-w-[200px] truncate">{{ $client->website_url ?? '—' }}</td>
                     <td class="px-5 py-4 text-right">
                         <div class="flex items-center justify-end gap-2">
                             <a href="{{ route('admin.clients.edit', $client) }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-primary-600 bg-primary-50 rounded-lg hover:bg-primary-100 transition-colors">
@@ -63,10 +63,10 @@
                 <tr>
                     <td colspan="5" class="px-5 py-16 text-center">
                         <div class="w-16 h-16 bg-primary-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                            <svg class="w-8 h-8 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                            <svg class="w-8 h-8 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                         </div>
-                        <p class="text-dark-100/60 font-medium">{{ __('Belum ada klien.') }}</p>
-                        <a href="{{ route('admin.clients.create') }}" class="text-primary-500 font-semibold text-sm hover:underline mt-2 inline-block">{{ __('Tambah klien pertama') }}</a>
+                        <p class="text-dark-100 font-medium">{{ __('Belum ada klien.') }}</p>
+                        <a href="{{ route('admin.clients.create') }}" class="text-primary-600 font-semibold text-sm hover:underline mt-2 inline-block">{{ __('Tambah klien pertama') }}</a>
                     </td>
                 </tr>
                 @endforelse

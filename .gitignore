@@ -39,3 +39,6 @@ Thumbs.db
 # Hosting symlinks (public -> public_html, private_html -> public_html)
 /public
 /private_html
+
+# Local design tooling output
+/.impeccable

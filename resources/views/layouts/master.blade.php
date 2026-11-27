@@ -1,11 +1,11 @@
 @php use App\Models\Setting; @endphp
 
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="scroll-smooth">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#3498DB">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#FFFFFF">
     <link rel="icon" type="image/webp" href="{{ asset(Setting::get('logo', 'logo.webp')) }}">
     <link rel="apple-touch-icon" href="{{ asset(Setting::get('logo', 'logo.webp')) }}">
 
@@ -62,54 +62,59 @@
     }
     </script>
 
-    {{-- Font loading (non-render-blocking) --}}
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    {{-- Fonts (Fontshare): Cabinet Grotesk for display, Switzer for text. Non-render-blocking. --}}
     <link rel="preconnect" href="https://api.fontshare.com" crossorigin>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" media="print" data-async-style>
-    <link rel="stylesheet" href="https://api.fontshare.com/v2/css?f[]=clash-display@200,300,400,500,600,700,800&display=swap" media="print" data-async-style>
+    <link rel="preconnect" href="https://cdn.fontshare.com" crossorigin>
+    <link rel="stylesheet" href="https://api.fontshare.com/v2/css?f[]=cabinet-grotesk@700,800&f[]=switzer@400,500,600,700&display=swap" media="print" data-async-style>
     <noscript>
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap">
-        <link rel="stylesheet" href="https://api.fontshare.com/v2/css?f[]=clash-display@200,300,400,500,600,700,800&display=swap">
+        <link rel="stylesheet" href="https://api.fontshare.com/v2/css?f[]=cabinet-grotesk@700,800&f[]=switzer@400,500,600,700&display=swap">
     </noscript>
 
-    {{-- Vite CSS (blocking, no FOUC) --}}
     @vite(['resources/css/app.css'])
     @stack('styles')
 </head>
-<body class="bg-white" x-data="{ pageLoading: true }" x-init="setTimeout(() => pageLoading = false, 350)">
-    {{-- Page Loading Spinner --}}
-    <div x-show="pageLoading" x-cloak
-         class="fixed inset-0 z-[9999] flex items-center justify-center bg-white page-loader"
-         style="transition: opacity 0.4s ease-out">
-        <div class="flex flex-col items-center gap-4">
-            <div class="w-10 h-10 border-[3px] border-primary-100 border-t-primary-500 rounded-full" style="animation: spin-smooth 0.8s linear infinite"></div>
-            <span class="text-sm font-semibold text-dark-100/50">{{ __('Memuat...') }}</span>
-        </div>
-    </div>
-
-    <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-3 focus:bg-primary-500 focus:text-white focus:rounded-xl focus:shadow-lg focus:outline-none focus:font-semibold focus:text-sm">
+<body class="bg-white pb-[4.75rem] lg:pb-0">
+    <!--
+    THESIS: The logo's stepped block stack is the page structure: proof lives inside the blocks, and one blue block per view carries the action. Refuses the floating-card, gradient-glow agency landing.
+    OWN-WORLD: White ground, logo slate #415060 and ink #0F1720, brand blue #3498DB as solid fills with ink text. Shared 1px hairline cells instead of shadowed cards, near-square corners, Cabinet Grotesk display over Switzer text.
+    STORY: A business owner or a vendor-comparing team sees in seconds what the studio builds, how fast, and the proof, then WhatsApps or books a consultation from any screen.
+    FIRST VIEWPORT: Left 7/12: H1, lede, blue "Mulai Konsultasi Gratis" plus secondary portfolio link. Right 5/12: the logo mark rebuilt from four stat blocks, the blue block holding the 1-3 week timeline. Mobile: H1, CTA, compact block stack, sticky WhatsApp/Konsultasi bar.
+    FORM: Grid Blok Logo (impeccable pick, #1 of 7), seed d359ee35.
+    FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance
+    -->
+    <a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:bg-dark-300 focus:px-4 focus:py-3 focus:text-sm focus:font-semibold focus:text-white">
         {{ __('Langsung ke konten utama') }}
     </a>
+
     @include('layouts.navbar')
-    
+
     <main id="main-content">
         @yield('content')
     </main>
-    
+
     @include('layouts.footer')
 
-    {{-- WhatsApp Floating Button --}}
-    <a href="https://wa.me/{{ Setting::get('contact_whatsapp') }}?text=Halo%20{{ urlencode(Setting::get('site_name', 'The Solution ID')) }}!%20Saya%20tertarik%20untuk%20konsultasi%20pembuatan%20website" 
-       target="_blank" 
-       rel="noopener noreferrer"
-       class="fixed bottom-6 right-6 z-50 w-14 h-14 bg-gradient-to-br from-green-400 to-green-600 rounded-2xl flex items-center justify-center shadow-xl shadow-green-500/30 hover:shadow-2xl hover:shadow-green-500/40 hover:scale-110 active:scale-95 transition-all duration-300 group"
+    @php
+        $waLink = 'https://wa.me/' . Setting::get('contact_whatsapp') . '?text=' . rawurlencode('Halo ' . Setting::get('site_name', 'The Solution ID') . '! Saya tertarik untuk konsultasi pembuatan website');
+    @endphp
+
+    {{-- Mobile action bar: the next step is always one tap away. --}}
+    <div class="pb-safe fixed inset-x-0 bottom-0 z-40 border-t border-line bg-white lg:hidden">
+        <div class="grid grid-cols-2 gap-2 px-3 py-2.5">
+            <a href="{{ $waLink }}" target="_blank" rel="noopener noreferrer" class="btn-wa !min-h-11 !px-3 text-sm">
+                <x-icon-whatsapp class="h-5 w-5" />
+                WhatsApp
+            </a>
+            <a href="{{ route('contact') }}" class="btn-primary !min-h-11 !px-3 text-sm">{{ __('Konsultasi Gratis') }}</a>
+        </div>
+    </div>
+
+    {{-- Desktop WhatsApp shortcut: a square that opens into a label on hover/focus. --}}
+    <a href="{{ $waLink }}" target="_blank" rel="noopener noreferrer"
+       class="group fixed bottom-6 right-6 z-40 hidden h-14 items-center bg-[#1FAF54] px-4 text-white shadow-lg transition-colors hover:bg-[#178F44] lg:inline-flex"
        aria-label="{{ __('Chat via WhatsApp') }}">
-        <svg class="w-7 h-7 text-white" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-        <span class="absolute -top-10 right-0 bg-dark-300 text-white text-xs font-medium px-3 py-2 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap shadow-lg" role="tooltip">
-            {{ __('Chat via WhatsApp') }}
-            <span class="absolute -bottom-1 right-4 w-2 h-2 bg-dark-300 rotate-45"></span>
-        </span>
+        <x-icon-whatsapp class="h-6 w-6 shrink-0" />
+        <span class="max-w-0 overflow-hidden whitespace-nowrap text-sm font-semibold transition-[max-width,margin] duration-300 ease-out-expo group-hover:ml-2.5 group-hover:max-w-[12rem] group-focus-visible:ml-2.5 group-focus-visible:max-w-[12rem]">{{ __('Chat via WhatsApp') }}</span>
     </a>
 
     @vite(['resources/js/app.js'])
