@@ -17,6 +17,7 @@
             <ul class="mt-4 space-y-1">
                 @foreach ([
                     ['home', __('Beranda')],
+                    ['services.android', __('Aplikasi Android')],
                     ['portfolio.index', __('Portfolio')],
                     ['articles.index', __('Artikel')],
                     ['jobs.index', __('Karier')],

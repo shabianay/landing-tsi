@@ -160,6 +160,36 @@
         </div>
     </section>
 
+    {{-- ============ Android app service (from the "Aplikasi Android" poster) ============ --}}
+    <section id="aplikasi-android" class="scroll-mt-20 overflow-hidden border-t border-line py-16 md:py-24">
+        <div class="wrap grid gap-12 lg:grid-cols-12 lg:items-center">
+            <div class="lg:col-span-7">
+                <h2 class="display-2">
+                    {{ __('Jasa Pembuatan') }}
+                    <span class="mt-1 block w-fit bg-primary-500 px-3 pb-1 text-dark-300">{{ __('Aplikasi Android') }}</span>
+                </h2>
+                <p class="mt-6 font-display text-xl font-bold text-dark-300 md:text-2xl">{{ __('Ide Anda,') }} <span class="text-primary-600">{{ __('kami jadikan aplikasi.') }}</span></p>
+                <p class="mt-3 max-w-[56ch] text-dark-100">{{ __('Dari desain sampai file APK siap pakai, dikerjakan rapi sesuai kebutuhan Anda.') }}</p>
+                <ul class="mt-8 grid gap-x-6 gap-y-3 sm:grid-cols-2">
+                    @foreach ([__('Desain UI sesuai permintaan'), __('Source code lengkap'), __('File APK siap install'), __('Bantu upload ke Play Store')] as $item)
+                        <li class="flex items-center gap-3 font-semibold text-dark-300">
+                            <span class="flex h-6 w-6 shrink-0 items-center justify-center bg-primary-500 text-dark-300">
+                                <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="square" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 5 5L19 7"/></svg>
+                            </span>
+                            {{ $item }}
+                        </li>
+                    @endforeach
+                </ul>
+                <div class="mt-10 flex flex-col gap-3 sm:flex-row">
+                    <a href="{{ route('services.android') }}" class="btn-ink !min-h-14 !px-7">{{ __('Lihat aplikasi yang bisa dibuat') }} <x-icon-arrow /></a>
+                </div>
+            </div>
+            <div class="px-8 lg:col-span-5">
+                <x-phone-mock />
+            </div>
+        </div>
+    </section>
+
     {{-- ============ Portfolio ============ --}}
     @if ($featuredProjects->isNotEmpty())
         <section id="portfolio" class="scroll-mt-20 py-16 md:py-24">
