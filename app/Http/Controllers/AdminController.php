@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Article;
+use App\Models\Applicant;
 use App\Models\Client;
 use App\Models\Contact;
 use App\Models\Faq;
@@ -30,13 +31,19 @@ class AdminController extends Controller
         $serviceCount = Service::count();
         $partnerCount = Partner::count();
         $stepCount = ProcessStep::count();
+        $applicantCount = Applicant::count();
+        $newApplicantCount = Applicant::where('created_at', '>=', now()->subDays(7))->count();
+        $applicantStatusCounts = Applicant::query()
+            ->select('status', DB::raw('count(*) as total'))
+            ->groupBy('status')
+            ->pluck('total', 'status');
         $latestContacts = Contact::latest()->take(5)->get();
         $latestArticles = Article::latest()->take(5)->get();
 
         // Stats
         $viewsToday = PageView::whereDate('created_at', today())->count();
         $viewsWeek = PageView::whereBetween('created_at', [now()->startOfWeek(), now()->endOfWeek()])->count();
-        $viewsMonth = PageView::whereMonth('created_at', now()->month)->count();
+        $viewsMonth = PageView::whereBetween('created_at', [now()->startOfMonth(), now()->endOfMonth()])->count();
         $topPages = PageView::select('url', DB::raw('count(*) as total'))
             ->groupBy('url')
             ->orderByDesc('total')
@@ -48,6 +55,7 @@ class AdminController extends Controller
             'articleCount', 'popupCount', 'faqCount',
             'serviceCount', 'partnerCount', 'stepCount',
             'latestContacts', 'latestArticles',
+            'applicantCount', 'newApplicantCount', 'applicantStatusCounts',
             'viewsToday', 'viewsWeek', 'viewsMonth', 'topPages'
         ));
     }

@@ -35,6 +35,10 @@ return [
         ],
     ],
 
+    'contact' => [
+        'recipients' => array_values(array_filter(array_map('trim', explode(',', (string) (env('CONTACT_RECIPIENTS') ?: 'shabianarsyl@gmail.com,thesolutionid@gmail.com'))))),
+    ],
+
     'openrouter' => [
         'api_key' => env('OPENROUTER_API_KEY'),
     ],

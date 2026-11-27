@@ -29,13 +29,13 @@
 
         <form action="{{ route('articles.index') }}" method="GET" class="mt-10 max-w-xl">
             <div class="relative">
-                <input type="text" name="q" value="{{ request('q') }}"
+                <input type="text" name="q" value="{{ $searchTerm }}"
                        placeholder="{{ __('Cari artikel...') }}"
                        class="w-full pl-12 pr-5 py-4 bg-white border border-dark-100/10 rounded-2xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all font-medium placeholder-dark-100/30 shadow-lg shadow-dark-300/5">
                 <button type="submit" class="absolute left-4 top-1/2 -translate-y-1/2 text-dark-100/30 hover:text-primary-500 transition-colors">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                 </button>
-                @if(request('q'))
+                @if($searchTerm)
                 <a href="{{ route('articles.index') }}" class="absolute right-4 top-1/2 -translate-y-1/2 text-dark-100/30 hover:text-red-500 transition-colors">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                 </a>
@@ -49,13 +49,13 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         @if($categories->isNotEmpty())
         <div class="flex flex-wrap gap-3 mb-12">
-            <a href="{{ route('articles.index', array_filter(['q' => request('q')])) }}"
-               class="px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 {{ !request('category') ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/25' : 'bg-white text-dark-100/60 hover:text-dark-300 border border-dark-100/10 hover:border-primary-500/30' }}">
+            <a href="{{ route('articles.index', array_filter(['q' => $searchTerm])) }}"
+               class="px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 {{ !$categoryTerm ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/25' : 'bg-white text-dark-100/60 hover:text-dark-300 border border-dark-100/10 hover:border-primary-500/30' }}">
                 {{ __('Semua') }}
             </a>
             @foreach($categories as $cat)
-            <a href="{{ route('articles.index', array_filter(['category' => $cat, 'q' => request('q')])) }}"
-               class="px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 {{ request('category') === $cat ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/25' : 'bg-white text-dark-100/60 hover:text-dark-300 border border-dark-100/10 hover:border-primary-500/30' }}">
+            <a href="{{ route('articles.index', array_filter(['category' => $cat, 'q' => $searchTerm])) }}"
+               class="px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 {{ $categoryTerm === $cat ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/25' : 'bg-white text-dark-100/60 hover:text-dark-300 border border-dark-100/10 hover:border-primary-500/30' }}">
                 {{ $cat }}
             </a>
             @endforeach

@@ -10,7 +10,13 @@ class ArticleController extends Controller
     {
         $query = Article::published();
 
-        if ($search = request('q')) {
+        $search = request()->query('q');
+        $category = request()->query('category');
+        $search = is_string($search) ? mb_substr(trim($search), 0, 100) : null;
+        $category = is_string($category) ? mb_substr(trim($category), 0, 255) : null;
+
+        if ($search) {
+            $search = addcslashes($search, '\\%_');
             $query->where(function ($q) use ($search) {
                 $q->where('title', 'like', "%{$search}%")
                   ->orWhere('content', 'like', "%{$search}%")
@@ -20,15 +26,15 @@ class ArticleController extends Controller
             });
         }
 
-        if ($category = request('category')) {
+        if ($category) {
             $query->where('category', $category);
         }
 
-        $articles = $query->recent()->paginate(9);
+        $articles = $query->recent()->paginate(9)->withQueryString();
         $categories = Article::published()->select('category')->distinct()->pluck('category')->filter();
 
-        $searchTerm = request('q');
-        $categoryTerm = request('category');
+        $searchTerm = is_string(request()->query('q')) ? mb_substr(trim(request()->query('q')), 0, 100) : null;
+        $categoryTerm = $category;
 
         $pageTitle = $searchTerm
             ? __('Hasil Pencarian') . ': ' . $searchTerm
@@ -41,14 +47,18 @@ class ArticleController extends Controller
         $ogTitle = $pageTitle;
         $ogDesc = $metaDesc;
 
-        return view('articles.index', compact('articles', 'categories', 'pageTitle', 'metaDesc', 'ogTitle', 'ogDesc'));
+        return view('articles.index', compact('articles', 'categories', 'pageTitle', 'metaDesc', 'ogTitle', 'ogDesc', 'searchTerm', 'categoryTerm'));
     }
 
     public function show($slug)
     {
         $article = Article::where('slug', $slug)->published()->firstOrFail();
 
-        $article->increment('views');
+        $viewedKey = 'viewed_articles.'.$article->id;
+        if (! session()->has($viewedKey)) {
+            $article->increment('views');
+            session()->put($viewedKey, true);
+        }
 
         $related = Article::published()
             ->where('id', '!=', $article->id)

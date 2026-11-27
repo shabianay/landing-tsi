@@ -17,6 +17,9 @@ use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\ProcessStepController;
 use App\Http\Controllers\ArticleController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\JobController;
+use App\Http\Controllers\Admin\ApplicantController;
+use App\Http\Controllers\Admin\PartnerSalesController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
@@ -25,6 +28,9 @@ Route::get('/portfolio/{id}', [PortfolioController::class, 'show'])->name('portf
 Route::get('/artikel', [ArticleController::class, 'index'])->name('articles.index');
 Route::get('/artikel/{slug}', [ArticleController::class, 'show'])->name('articles.show');
 Route::get('/about', [HomeController::class, 'about'])->name('about');
+Route::get('/jobs', [JobController::class, 'index'])->name('jobs.index');
+Route::post('/jobs/apply', [JobController::class, 'store'])->middleware('throttle:5,1')->name('jobs.apply');
+Route::get('/jobs/thanks', [JobController::class, 'thanks'])->name('jobs.thanks');
 Route::get('/contact', [ContactController::class, 'index'])->name('contact');
 Route::post('/contact', [ContactController::class, 'store'])->middleware('throttle:3,1')->name('contact.store');
 
@@ -36,6 +42,21 @@ Route::middleware('auth')->group(function () {
 
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/', [AdminController::class, 'index'])->name('dashboard');
+    Route::get('/applicants/export', [ApplicantController::class, 'export'])->name('applicants.export');
+    Route::get('/applicants', [ApplicantController::class, 'index'])->name('applicants.index');
+    Route::get('/applicants/{applicant}', [ApplicantController::class, 'show'])->whereNumber('applicant')->name('applicants.show');
+    Route::put('/applicants/{applicant}', [ApplicantController::class, 'update'])->whereNumber('applicant')->name('applicants.update');
+    Route::delete('/applicants/{applicant}', [ApplicantController::class, 'destroy'])->whereNumber('applicant')->name('applicants.destroy');
+    Route::get('/partner-sales', [PartnerSalesController::class, 'index'])->name('partner-sales.index');
+    Route::get('/partner-sales/create', [PartnerSalesController::class, 'create'])->name('partner-sales.create');
+    Route::post('/partner-sales', [PartnerSalesController::class, 'store'])->name('partner-sales.store');
+    Route::get('/partner-sales/{lead}', [PartnerSalesController::class, 'show'])->whereNumber('lead')->name('partner-sales.show');
+    Route::post('/partner-sales/{lead}/deals', [PartnerSalesController::class, 'storeDeal'])->whereNumber('lead')->name('partner-sales.deals.store');
+    Route::post('/partner-deals/{deal}/payments', [PartnerSalesController::class, 'storePayment'])->whereNumber('deal')->name('partner-sales.payments.store');
+    Route::delete('/partner-deals/{deal}', [PartnerSalesController::class, 'destroyDeal'])->whereNumber('deal')->name('partner-sales.deals.destroy');
+    Route::delete('/partner-payments/{payment}', [PartnerSalesController::class, 'destroyPayment'])->whereNumber('payment')->name('partner-sales.payments.destroy');
+    Route::patch('/partner-payments/{payment}/commission-paid', [PartnerSalesController::class, 'markCommissionPaid'])->whereNumber('payment')->name('partner-sales.commissions.paid');
+    Route::patch('/partner-bonuses/{bonus}/paid', [PartnerSalesController::class, 'markBonusPaid'])->whereNumber('bonus')->name('partner-sales.bonuses.paid');
     Route::resource('clients', ClientController::class)->except(['show']);
     Route::resource('projects', AdminProjectController::class)->except(['show']);
     Route::resource('contacts', AdminContactController::class)->only(['index', 'show', 'destroy']);

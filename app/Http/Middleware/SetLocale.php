@@ -15,12 +15,6 @@ class SetLocale
             App::setLocale($request->session()->get('locale'));
         }
 
-        $response = $next($request);
-
-        $response->headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');
-        $response->headers->set('X-Content-Type-Options', 'nosniff');
-        $response->headers->set('X-Frame-Options', 'SAMEORIGIN');
-
-        return $response;
+        return $next($request);
     }
 }

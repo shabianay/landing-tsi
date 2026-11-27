@@ -16,6 +16,11 @@
         <changefreq>weekly</changefreq>
     </url>
     <url>
+        <loc>{{ route('jobs.index') }}</loc>
+        <priority>0.8</priority>
+        <changefreq>weekly</changefreq>
+    </url>
+    <url>
         <loc>{{ route('about') }}</loc>
         <priority>0.7</priority>
         <changefreq>monthly</changefreq>

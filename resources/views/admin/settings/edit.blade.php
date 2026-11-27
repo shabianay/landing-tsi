@@ -37,7 +37,7 @@
                             <img src="{{ asset($setting->value) }}" alt="Logo" class="h-12 w-auto rounded-lg border border-dark-100/10">
                         </div>
                         @endif
-                        <input type="file" name="value" id="value" accept="image/jpeg,image/png,image/jpg,image/gif,image/webp,image/svg+xml"
+                        <input type="file" name="value" id="value" accept="image/jpeg,image/png,image/jpg,image/gif,image/webp"
                                class="w-full px-4 py-3 bg-dark-50/50 border border-dark-100/10 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all font-medium file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-primary-50 file:text-primary-600 hover:file:bg-primary-100">
                     @else
                     <textarea name="value" id="value" rows="3" class="w-full px-4 py-3 bg-dark-50/50 border border-dark-100/10 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all font-medium placeholder-dark-100/30">{{ old('value', $setting->value) }}</textarea>

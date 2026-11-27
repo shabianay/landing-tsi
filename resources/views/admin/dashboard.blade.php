@@ -8,6 +8,24 @@
     <p class="text-dark-100/50 mt-1 font-medium">{{ __('Overview data TSI') }}</p>
 </div>
 
+<section class="mb-8 rounded-2xl border border-primary-500/10 bg-white p-5 shadow-sm sm:p-6">
+    <div class="flex flex-wrap items-start justify-between gap-4">
+        <div>
+            <h2 class="text-lg font-bold text-dark-300">Rekrutmen sales</h2>
+            <p class="mt-1 text-sm text-dark-100/50">{{ $applicantCount }} total pelamar · {{ $newApplicantCount }} dalam 7 hari terakhir</p>
+        </div>
+        <div class="flex flex-wrap gap-2">
+            <a href="{{ route('admin.applicants.index') }}" class="rounded-xl bg-primary-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-600">Kelola pelamar</a>
+            <a href="{{ route('admin.partner-sales.index') }}" class="rounded-xl border border-primary-200 px-4 py-2.5 text-sm font-semibold text-primary-700 hover:bg-primary-50">Klien partner &amp; komisi</a>
+        </div>
+    </div>
+    <div class="mt-4 flex flex-wrap gap-2">
+        @foreach (\App\Models\Applicant::STATUSES as $status => $label)
+            <span class="rounded-full bg-dark-50 px-3 py-1.5 text-xs font-medium text-dark-300">{{ $label }}: {{ $applicantStatusCounts[$status] ?? 0 }}</span>
+        @endforeach
+    </div>
+</section>
+
 <div class="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 md:gap-5 mb-8">
     <a href="{{ route('admin.clients.index') }}" class="bg-white rounded-2xl border border-dark-100/5 shadow-sm p-5 hover:shadow-md hover:border-primary-500/20 transition-all duration-200 group">
         <div class="flex items-center justify-between mb-3">

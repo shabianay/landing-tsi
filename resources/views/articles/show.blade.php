@@ -158,7 +158,6 @@
             </div>
         </div>
     </section>
-</article>
 
 {{-- Real Related Articles --}}
 @if($related->isNotEmpty())
@@ -195,34 +194,35 @@
     </div>
 </section>
 @endif
+</article>
 
 {{-- Schema.org Article --}}
 @php
     $articleSchema = [
-        '@@context' => 'https://schema.org',
-        '@@type' => 'Article',
+        '@context' => 'https://schema.org',
+        '@type' => 'Article',
         'headline' => $article->title,
         'description' => $article->excerpt ?? Str::limit(strip_tags($article->content), 160),
         'image' => $article->image ? asset('storage/' . $article->image) : asset('storage/og-default.jpg'),
         'author' => [
-            '@@type' => 'Organization',
+            '@type' => 'Organization',
             'name' => 'The Solution ID',
         ],
         'publisher' => [
-            '@@type' => 'Organization',
+            '@type' => 'Organization',
             'name' => 'The Solution ID',
             'logo' => [
-                '@@type' => 'ImageObject',
+                '@type' => 'ImageObject',
                 'url' => asset(\App\Models\Setting::get('logo', 'logo.webp')),
             ],
         ],
         'datePublished' => $article->published_at?->toIso8601String(),
         'dateModified' => $article->updated_at->toIso8601String(),
         'mainEntityOfPage' => [
-            '@@type' => 'WebPage',
-            '@@id' => route('articles.show', $article->slug),
+            '@type' => 'WebPage',
+            '@id' => route('articles.show', $article->slug),
         ],
     ];
 @endphp
-<script type="application/ld+json">{{ json_encode($articleSchema, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) }}</script>
+<script type="application/ld+json">{!! json_encode($articleSchema, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP) !!}</script>
 @endsection

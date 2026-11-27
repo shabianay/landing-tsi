@@ -11,11 +11,12 @@ trait HandlesTranslations
     {
         foreach ($translatableFields as $field) {
             foreach (['id', 'en'] as $locale) {
-                $key = "trans_{$field}_{$locale}";
+                $key = "{$field}.{$locale}";
                 if ($request->has($key)) {
-                    $model->setTranslation($field, $locale, $request->input($key));
+                    $value = $request->input($key);
+                    $model->setTranslation($field, $locale, $value);
                     if ($locale === 'id') {
-                        $model->$field = $request->input($key);
+                        $model->$field = $value;
                     }
                 }
             }

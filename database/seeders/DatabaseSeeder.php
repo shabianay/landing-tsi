@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\User;
+use Illuminate\Support\Str;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -17,11 +18,18 @@ class DatabaseSeeder extends Seeder
     {
         // User::factory(10)->create();
 
+        $password = env('ADMIN_PASSWORD') ?: Str::password(24);
+
         User::factory()->create([
             'name' => 'Admin',
-            'email' => 'admin@thesolutionid.com',
+            'email' => env('ADMIN_EMAIL') ?: 'admin@thesolutionid.com',
+            'password' => $password,
             'is_admin' => true,
         ]);
+
+        if (! env('ADMIN_PASSWORD')) {
+            $this->command?->warn('Generated admin password (store it now, it will not be shown again): '.$password);
+        }
 
         $this->call([
             ClientSeeder::class,

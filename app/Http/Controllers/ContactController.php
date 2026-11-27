@@ -15,13 +15,18 @@ class ContactController extends Controller
 
     public function store(ContactRequest $request)
     {
-        $validated = $request->validated();
+        // Bots fill the hidden honeypot field; pretend success without storing anything.
+        if ($request->filled('website')) {
+            return redirect()->route('contact')->with('success', 'Pesan Anda telah terkirim. Kami akan segera menghubungi Anda.');
+        }
+
+        $validated = $request->safe()->except('website');
 
         // Save contact
         \App\Models\Contact::create($validated);
 
         // Send email notification to both recipients (queued)
-        foreach (['shabianarsyl@gmail.com', 'thesolutionid@gmail.com'] as $recipient) {
+        foreach (config('services.contact.recipients', []) as $recipient) {
             Mail::to($recipient)->queue(new ContactNotification(
                 $validated['name'],
                 $validated['email'],

@@ -83,6 +83,27 @@ Manage the following content:
 - Site Settings & Popups
 - Contact Form Submissions
 
+## Sales Recruitment
+
+- Public job listing and application form: `/jobs`
+- Admin applicant dashboard: `/admin/applicants` (admin login required)
+- Applicants must be at least 18; duplicate WhatsApp numbers are rejected, and status changes are logged.
+- Admin records the agreement version when marking it signed. Partner codes such as `TSI-001` are assigned once when status becomes active.
+- Active partners send prospective client details to TSI via WhatsApp before making an offer; clients should mention the partner code. Admin records the lead and subsequent deals/payments in the partner sales dashboard; partner self-service and lead entry are deferred to phase 2.
+- Admin can record discounted deals, each received payment, unpaid/paid 10% commissions, and monthly bonuses. Bonus eligibility uses distinct clients with a deal of at least Rp2,000,000 and a DP received in the calendar month.
+- CSV export respects the active applicant filters; deleted applications are soft-deleted.
+- MySQL/MariaDB backups are written outside the public directory to `storage/app/private/backups`.
+
+For local development, configure `.env.local` for your local database, then run:
+
+```bash
+php artisan migrate --env=local
+npm run build
+php artisan serve --env=local
+```
+
+Run `php artisan database:backup --env=local` to create a backup manually. To run the daily 02:00 backup schedule locally, start `php artisan schedule:work --env=local` in a separate terminal. Production servers must run Laravel's scheduler for daily backups.
+
 ## License
 
 This project is licensed under the MIT License.

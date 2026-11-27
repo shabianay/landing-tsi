@@ -65,7 +65,7 @@
             <p class="font-medium text-dark-300 mt-2 leading-relaxed whitespace-pre-wrap">{{ $contact->message }}</p>
         </div>
         <div class="pt-4 border-t border-dark-100/5 flex justify-end">
-            <form method="POST" action="{{ route('admin.contacts.destroy', $contact) }}" onsubmit="return confirm('{{ __('Yakin ingin menghapus pesan ini?') }}')">
+            <form method="POST" action="{{ route('admin.contacts.destroy', $contact) }}" data-confirm="{{ __('Yakin ingin menghapus pesan ini?') }}">
                 @csrf
                 @method('DELETE')
                 <button type="submit" class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-red-600 bg-red-50 rounded-xl hover:bg-red-100 transition-colors">

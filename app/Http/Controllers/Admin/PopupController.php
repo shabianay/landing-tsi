@@ -27,17 +27,17 @@ class PopupController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'trans_title_id' => 'required|string|max:255',
-            'trans_content_id' => 'required|string',
-            'button_url' => 'nullable|string|max:500',
+            'title.id' => 'required|string|max:255',
+            'content.id' => 'required|string',
+            'button_url' => 'nullable|url:http,https|max:500',
             'is_active' => 'nullable|boolean',
             'display_delay' => 'nullable|integer|min:0|max:30',
             'start_at' => 'nullable|date',
             'end_at' => 'nullable|date|after_or_equal:start_at',
         ]);
 
-        $validated['title'] = $request->input('trans_title_id');
-        $validated['content'] = $request->input('trans_content_id');
+        $validated['title'] = $request->input('title.id');
+        $validated['content'] = $request->input('content.id');
         $validated['is_active'] = $request->boolean('is_active');
 
         $popup = Popup::create($validated);
@@ -55,17 +55,17 @@ class PopupController extends Controller
     public function update(Request $request, Popup $popup)
     {
         $validated = $request->validate([
-            'trans_title_id' => 'required|string|max:255',
-            'trans_content_id' => 'required|string',
-            'button_url' => 'nullable|string|max:500',
+            'title.id' => 'required|string|max:255',
+            'content.id' => 'required|string',
+            'button_url' => 'nullable|url:http,https|max:500',
             'is_active' => 'nullable|boolean',
             'display_delay' => 'nullable|integer|min:0|max:30',
             'start_at' => 'nullable|date',
             'end_at' => 'nullable|date|after_or_equal:start_at',
         ]);
 
-        $validated['title'] = $request->input('trans_title_id');
-        $validated['content'] = $request->input('trans_content_id');
+        $validated['title'] = $request->input('title.id');
+        $validated['content'] = $request->input('content.id');
         $validated['is_active'] = $request->boolean('is_active');
 
         $popup->update($validated);

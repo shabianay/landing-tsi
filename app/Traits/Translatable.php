@@ -10,6 +10,11 @@ trait Translatable
     public static function bootTranslatable(): void
     {
         static::deleting(function ($model) {
+            // Soft-deleted models keep their translations so they can be restored.
+            if (method_exists($model, 'isForceDeleting') && ! $model->isForceDeleting()) {
+                return;
+            }
+
             $model->translations()->delete();
         });
     }

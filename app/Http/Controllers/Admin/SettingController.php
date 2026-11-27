@@ -55,7 +55,7 @@ class SettingController extends Controller
         ];
 
         if ($setting->key === 'logo') {
-            $rules['value'] = 'nullable|image|mimes:jpeg,png,jpg,gif,webp,svg|max:2048';
+            $rules['value'] = 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048';
         }
 
         $validated = $request->validate($rules);

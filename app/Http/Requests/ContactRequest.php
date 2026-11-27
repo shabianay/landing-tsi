@@ -18,7 +18,8 @@ class ContactRequest extends FormRequest
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255',
             'subject' => 'nullable|string|max:255',
-            'message' => 'required|string',
+            'message' => 'required|string|max:5000',
+            'website' => 'nullable|string|max:255',
         ];
 
         if (config('services.google.recaptcha_secret_key')) {

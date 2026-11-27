@@ -29,23 +29,30 @@ class ProjectController extends Controller
 
     public function store(Request $request)
     {
-        $validated = $request->validate([
+        $request->validate([
             'client_id' => 'required|exists:clients,id',
+            'title.id' => 'required|string|max:255',
+            'title.en' => 'nullable|string|max:255',
+            'description.id' => 'nullable|string',
+            'description.en' => 'nullable|string',
             'website_url' => 'nullable|url|max:255',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'og_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'status' => 'nullable|string|max:50',
         ]);
 
+        $data = $request->only(['client_id', 'website_url', 'status']);
+        $data['title'] = $request->input('title.id', '');
+
         if ($request->hasFile('image')) {
-            $validated['image'] = $request->file('image')->store('projects', 'public');
+            $data['image'] = $request->file('image')->store('projects', 'public');
         }
 
         if ($request->hasFile('og_image')) {
-            $validated['og_image'] = $request->file('og_image')->store('projects', 'public');
+            $data['og_image'] = $request->file('og_image')->store('projects', 'public');
         }
 
-        $project = Project::create($validated);
+        $project = Project::create($data);
         $this->saveTranslations($request, $project, $this->translatable);
 
         return redirect()->route('admin.projects.index')->with('success', 'Proyek berhasil ditambahkan.');
@@ -60,35 +67,42 @@ class ProjectController extends Controller
 
     public function update(Request $request, Project $project)
     {
-        $validated = $request->validate([
+        $request->validate([
             'client_id' => 'required|exists:clients,id',
+            'title.id' => 'required|string|max:255',
+            'title.en' => 'nullable|string|max:255',
+            'description.id' => 'nullable|string',
+            'description.en' => 'nullable|string',
             'website_url' => 'nullable|url|max:255',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'og_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'status' => 'nullable|string|max:50',
         ]);
 
+        $data = $request->only(['client_id', 'website_url', 'status']);
+        $data['title'] = $request->input('title.id', '');
+
         if ($request->hasFile('image')) {
             if ($project->image) {
                 Storage::disk('public')->delete($project->image);
             }
-            $validated['image'] = $request->file('image')->store('projects', 'public');
+            $data['image'] = $request->file('image')->store('projects', 'public');
         } elseif ($request->boolean('remove_image') && $project->image) {
             Storage::disk('public')->delete($project->image);
-            $validated['image'] = null;
+            $data['image'] = null;
         }
 
         if ($request->hasFile('og_image')) {
             if ($project->og_image) {
                 Storage::disk('public')->delete($project->og_image);
             }
-            $validated['og_image'] = $request->file('og_image')->store('projects', 'public');
+            $data['og_image'] = $request->file('og_image')->store('projects', 'public');
         } elseif ($request->boolean('remove_og_image') && $project->og_image) {
             Storage::disk('public')->delete($project->og_image);
-            $validated['og_image'] = null;
+            $data['og_image'] = null;
         }
 
-        $project->update($validated);
+        $project->update($data);
         $this->saveTranslations($request, $project, $this->translatable);
 
         return redirect()->route('admin.projects.index')->with('success', 'Proyek berhasil diperbarui.');
@@ -96,12 +110,6 @@ class ProjectController extends Controller
 
     public function destroy(Project $project)
     {
-        if ($project->image) {
-            Storage::disk('public')->delete($project->image);
-        }
-        if ($project->og_image) {
-            Storage::disk('public')->delete($project->og_image);
-        }
         $project->delete();
 
         return redirect()->route('admin.projects.index')->with('success', 'Proyek berhasil dihapus.');

@@ -13,7 +13,16 @@ class TrackPageViews
     {
         $response = $next($request);
 
-        if ($request->isMethod('GET') && !$request->ajax() && !$request->expectsJson() && !str_starts_with($request->path(), 'admin') && !str_starts_with($request->path(), '_') && $request->path() !== 'up') {
+        $isBot = (bool) preg_match('/bot|crawl|spider|slurp|curl|wget|python|headless|lighthouse|monitor/i', (string) $request->userAgent());
+
+        if ($request->isMethod('GET')
+            && $response->getStatusCode() === 200
+            && ! $isBot
+            && ! $request->ajax()
+            && ! $request->expectsJson()
+            && ! str_starts_with($request->path(), 'admin')
+            && ! str_starts_with($request->path(), '_')
+            && ! in_array($request->path(), ['up', 'sitemap.xml', 'robots.txt'], true)) {
             try {
                 PageView::create([
                     'url' => $request->path(),

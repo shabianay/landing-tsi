@@ -39,6 +39,14 @@
                     <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
                     {{ __('Dashboard') }}
                 </a>
+                <a href="{{ route('admin.applicants.index') }}" class="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 {{ request()->routeIs('admin.applicants.*') ? 'bg-primary-50 text-primary-600' : 'text-dark-100/50 hover:bg-dark-50/80 hover:text-dark-300' }}">
+                    <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2m16 0v-2a4 4 0 00-3-3.87M14 3.13a4 4 0 010 7.75M14 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+                    {{ __('Pelamar Sales') }}
+                </a>
+                <a href="{{ route('admin.partner-sales.index') }}" class="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 {{ request()->routeIs('admin.partner-sales.*') ? 'bg-primary-50 text-primary-600' : 'text-dark-100/50 hover:bg-dark-50/80 hover:text-dark-300' }}">
+                    <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 7h18M5 7l1.5 13h11L19 7M9 7V5a3 3 0 016 0v2m-5 5h4"/></svg>
+                    {{ __('Klien Partner & Komisi') }}
+                </a>
                 <a href="{{ route('admin.clients.index') }}" class="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 {{ request()->routeIs('admin.clients.*') ? 'bg-primary-50 text-primary-600' : 'text-dark-100/50 hover:bg-dark-50/80 hover:text-dark-300' }}">
                     <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
                     {{ __('Klien') }}
@@ -108,14 +116,14 @@
                     </div>
                     <span class="font-bold text-dark-300">TSI</span>
                 </a>
-                <button id="admin-mobile-toggle" class="p-2 rounded-lg hover:bg-dark-50/80 transition-colors" onclick="toggleAdminSidebar()">
+                <button id="admin-mobile-toggle" class="p-2 rounded-lg hover:bg-dark-50/80 transition-colors" data-toggle-admin-sidebar>
                     <svg class="w-5 h-5 text-dark-100" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
                 </button>
             </div>
         </div>
 
         {{-- Mobile sidebar overlay --}}
-        <div id="admin-sidebar-overlay" class="lg:hidden fixed inset-0 z-30 bg-dark-300/50 hidden" onclick="toggleAdminSidebar()"></div>
+        <div id="admin-sidebar-overlay" class="lg:hidden fixed inset-0 z-30 bg-dark-300/50 hidden" data-toggle-admin-sidebar></div>
 
         {{-- Mobile sidebar --}}
         <aside id="admin-sidebar" class="lg:hidden fixed top-0 left-0 z-40 w-64 h-full bg-white shadow-2xl border-r border-dark-100/5 hidden flex-col">
@@ -129,7 +137,7 @@
                         <span class="text-[10px] text-dark-100/40 font-medium tracking-wider uppercase">Admin Panel</span>
                     </div>
                 </a>
-                <button onclick="toggleAdminSidebar()" class="p-1.5 rounded-lg hover:bg-dark-50/80 transition-colors">
+                <button data-toggle-admin-sidebar class="p-1.5 rounded-lg hover:bg-dark-50/80 transition-colors">
                     <svg class="w-5 h-5 text-dark-100" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                 </button>
             </div>
@@ -137,6 +145,14 @@
                 <a href="{{ route('admin.dashboard') }}" class="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 {{ request()->routeIs('admin.dashboard') ? 'bg-primary-50 text-primary-600' : 'text-dark-100/50 hover:bg-dark-50/80 hover:text-dark-300' }}">
                     <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
                     {{ __('Dashboard') }}
+                </a>
+                <a href="{{ route('admin.applicants.index') }}" class="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 {{ request()->routeIs('admin.applicants.*') ? 'bg-primary-50 text-primary-600' : 'text-dark-100/50 hover:bg-dark-50/80 hover:text-dark-300' }}">
+                    <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2m16 0v-2a4 4 0 00-3-3.87M14 3.13a4 4 0 010 7.75M14 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+                    {{ __('Pelamar Sales') }}
+                </a>
+                <a href="{{ route('admin.partner-sales.index') }}" class="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 {{ request()->routeIs('admin.partner-sales.*') ? 'bg-primary-50 text-primary-600' : 'text-dark-100/50 hover:bg-dark-50/80 hover:text-dark-300' }}">
+                    <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 7h18M5 7l1.5 13h11L19 7M9 7V5a3 3 0 016 0v2m-5 5h4"/></svg>
+                    {{ __('Klien Partner & Komisi') }}
                 </a>
                 <a href="{{ route('admin.clients.index') }}" class="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 {{ request()->routeIs('admin.clients.*') ? 'bg-primary-50 text-primary-600' : 'text-dark-100/50 hover:bg-dark-50/80 hover:text-dark-300' }}">
                     <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
@@ -208,11 +224,5 @@
     </div>
 
     @vite(['resources/js/app.js'])
-    <script>
-        function toggleAdminSidebar() {
-            document.getElementById('admin-sidebar').classList.toggle('hidden');
-            document.getElementById('admin-sidebar-overlay').classList.toggle('hidden');
-        }
-    </script>
 </body>
 </html>

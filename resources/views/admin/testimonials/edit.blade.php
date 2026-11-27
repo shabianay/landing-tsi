@@ -29,7 +29,7 @@
                 </div>
                 <div>
                     <label for="rating" class="block text-sm font-semibold text-dark-300 mb-2">{{ __('Rating') }} <span class="text-red-500">*</span></label>
-                    <div class="flex gap-1" x-data="{ rating: {{ old('rating', $testimonial->rating) }} }">
+                    <div class="flex gap-1" x-data="{ rating: {{ (int) old('rating', $testimonial->rating) }} }">
                         @for($i = 1; $i <= 5; $i++)
                         <button type="button" @click="rating = {{ $i }}" class="p-0.5 transition-colors" :class="rating >= {{ $i }} ? 'text-yellow-400' : 'text-dark-100/10'">
                             <svg class="w-7 h-7" fill="currentColor" viewBox="0 0 20 20">

@@ -21,11 +21,11 @@
     @foreach($locales as $code => $name)
         <div x-show="activeTab === '{{ $code }}'" x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100">
             @if($type === 'textarea')
-                <textarea name="trans_{{ $field }}_{{ $code }}" rows="{{ $rows }}" {{ $required && $code === $currentLocale ? 'required' : '' }}
+                <textarea name="{{ $field }}[{{ $code }}]" rows="{{ $rows }}" {{ $required && $code === $currentLocale ? 'required' : '' }}
                     placeholder="{{ $placeholder }}"
-                    class="w-full px-4 py-3.5 bg-dark-50/50 border border-dark-100/10 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all font-medium placeholder-dark-100/30 text-dark-300 resize-none">{{ old('trans_' . $field . '_' . $code, $model?->translations->where('locale', $code)->where('key', $field)->first()?->value ?? $model?->$field) }}</textarea>
+                    class="w-full px-4 py-3.5 bg-dark-50/50 border border-dark-100/10 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all font-medium placeholder-dark-100/30 text-dark-300 resize-none">{{ old($field . '.' . $code, $model?->translations->where('locale', $code)->where('key', $field)->first()?->value ?? $model?->$field) }}</textarea>
             @else
-                <input type="text" name="trans_{{ $field }}_{{ $code }}" value="{{ old('trans_' . $field . '_' . $code, $model?->translations->where('locale', $code)->where('key', $field)->first()?->value ?? $model?->$field) }}"
+                <input type="text" name="{{ $field }}[{{ $code }}]" value="{{ old($field . '.' . $code, $model?->translations->where('locale', $code)->where('key', $field)->first()?->value ?? $model?->$field) }}"
                     {{ $required && $code === $currentLocale ? 'required' : '' }}
                     placeholder="{{ $placeholder }}"
                     class="w-full px-4 py-3.5 bg-dark-50/50 border border-dark-100/10 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all font-medium placeholder-dark-100/30 text-dark-300">

@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Traits\Translatable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class Article extends Model
@@ -34,6 +35,13 @@ class Article extends Model
             }
             if (empty($article->author)) {
                 $article->author = 'The Solution ID';
+            }
+        });
+
+        // Files are kept while soft-deleted so a restored article still has its images.
+        static::forceDeleted(function ($article) {
+            foreach (array_filter([$article->image, $article->og_image]) as $path) {
+                Storage::disk('public')->delete($path);
             }
         });
     }

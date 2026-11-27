@@ -20,7 +20,7 @@
             <div class="space-y-6">
                 <div>
                     <x-admin.locale-tabs :model="null" field="title" label="{{ __('Judul') }}" required="true" placeholder="{{ __('Judul proyek') }}" />
-                    @error('title') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                    @error('title.en') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                 </div>
                 <div>
                     <label for="client_id" class="block text-sm font-semibold text-dark-300 mb-2">{{ __('Klien') }} <span class="text-red-500">*</span></label>
@@ -34,7 +34,7 @@
                 </div>
                 <div>
                     <x-admin.locale-tabs :model="null" field="description" label="{{ __('Deskripsi') }}" type="textarea" :rows="6" placeholder="{{ __('Deskripsi proyek') }}" />
-                    @error('description') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                    @error('description.en') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                 </div>
                 <div>
                     <label for="website_url" class="block text-sm font-semibold text-dark-300 mb-2">{{ __('Website URL') }}</label>

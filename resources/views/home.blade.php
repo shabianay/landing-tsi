@@ -22,7 +22,7 @@
 
         <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="max-w-4xl mx-auto text-center">
-                <div
+                {{-- <div
                     class="inline-flex items-center gap-2.5 px-4 py-2 bg-white/80 backdrop-blur-sm rounded-full text-sm font-semibold mb-8 border border-primary-200/50 shadow-lg shadow-primary-500/5">
                     <span class="flex h-2 w-2 relative">
                         <span
@@ -30,7 +30,7 @@
                         <span class="relative inline-flex rounded-full h-2 w-2 bg-primary-500"></span>
                     </span>
                     {{ __('Tersedia Slot Konsultasi Gratis Minggu Ini') }}
-                </div>
+                </div> --}}
                 <h1
                     class="text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold text-dark-300 leading-[1.05] tracking-tight mb-8">
                     {{ __('Ubah Visi Bisnis') }}<br>

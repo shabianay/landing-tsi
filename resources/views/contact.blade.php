@@ -41,6 +41,10 @@
                     @endif
                     <form action="{{ route('contact.store') }}" method="POST" class="space-y-6">
                         @csrf
+                        <div class="absolute -left-[10000px] top-auto h-px w-px overflow-hidden" aria-hidden="true">
+                            <label for="website">{{ __('Jangan isi kolom ini') }}</label>
+                            <input id="website" type="text" name="website" tabindex="-1" autocomplete="off">
+                        </div>
                         <div class="grid sm:grid-cols-2 gap-5">
                             <div class="group">
                                 <label for="name" class="block text-sm font-bold text-dark-300 mb-2.5">{{ __('Nama Lengkap') }} <span class="text-red-400">*</span></label>
@@ -68,7 +72,7 @@
                             <label for="message" class="block text-sm font-bold text-dark-300 mb-2.5">{{ __('Pesan') }} <span class="text-red-400">*</span></label>
                             <div class="relative">
                                 <svg class="w-5 h-5 text-dark-100/30 absolute left-4 top-4 group-focus-within:text-primary-500 transition-colors pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
-                                <textarea name="message" id="message" rows="5" required placeholder="{{ __('Jelaskan kebutuhan bisnis Anda secara singkat...') }}" class="w-full pl-11 pr-4 py-3.5 bg-dark-50/50 border border-dark-100/10 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all font-medium placeholder-dark-100/30 text-dark-300 resize-none"></textarea>
+                                <textarea name="message" id="message" rows="5" required maxlength="5000" placeholder="{{ __('Jelaskan kebutuhan bisnis Anda secara singkat...') }}" class="w-full pl-11 pr-4 py-3.5 bg-dark-50/50 border border-dark-100/10 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all font-medium placeholder-dark-100/30 text-dark-300 resize-none"></textarea>
                             </div>
                         </div>
                         @if(config('services.google.recaptcha_site_key'))
