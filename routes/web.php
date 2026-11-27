@@ -28,7 +28,8 @@ Route::get('/portfolio', [PortfolioController::class, 'index'])->name('portfolio
 Route::get('/portfolio/{id}', [PortfolioController::class, 'show'])->name('portfolio.show');
 Route::get('/artikel', [ArticleController::class, 'index'])->name('articles.index');
 Route::get('/artikel/{slug}', [ArticleController::class, 'show'])->name('articles.show');
-Route::view('/aplikasi-android', 'services.android')->name('services.android');
+// The Android service now lives in the home "Mau dibuatkan apa?" section.
+Route::redirect('/aplikasi-android', '/#jasa', 301)->name('services.android');
 Route::get('/about', [HomeController::class, 'about'])->name('about');
 Route::get('/jobs', [JobController::class, 'index'])->name('jobs.index');
 Route::post('/jobs/apply', [JobController::class, 'store'])->middleware('throttle:5,1')->name('jobs.apply');

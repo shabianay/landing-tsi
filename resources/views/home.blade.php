@@ -132,6 +132,8 @@
         </div>
     </section>
 
+    @include('partials.services-showcase')
+
     {{-- ============ Services ============ --}}
     <section id="layanan" class="scroll-mt-20 border-t border-line bg-dark-50 py-16 md:py-24">
         <div class="wrap">
@@ -157,27 +159,6 @@
             @else
                 <p class="mt-10 border border-dashed border-dark-100/40 p-8 text-dark-100">{{ __('Belum ada layanan.') }}</p>
             @endif
-        </div>
-    </section>
-
-    {{-- ============ Android app service ============ --}}
-    @php $androidExamples = \App\Support\AndroidAppExamples::all(); @endphp
-    <section id="aplikasi-android" class="scroll-mt-20 overflow-hidden border-t border-line py-16 md:py-24">
-        <div class="wrap grid gap-12 lg:grid-cols-12 lg:items-center">
-            <div class="lg:col-span-7">
-                <h2 class="display-2 max-w-[16ch]">{{ __('Aplikasi Android untuk bisnis Anda.') }}</h2>
-                <p class="mt-5 max-w-[58ch] text-lg text-dark-100">{{ __('Kami rancang tampilannya dan kami bangun aplikasinya. Anda terima file APK dan source code lengkapnya, lalu kami bantu terbitkan di Play Store.') }}</p>
-                <ul class="mt-8 flex flex-wrap gap-2">
-                    @foreach (array_slice($androidExamples, 0, 6) as $example)
-                        <li class="tag !px-3 !py-1.5 !text-sm">{{ $example['label'] }}</li>
-                    @endforeach
-                    <li class="tag-blue !px-3 !py-1.5 !text-sm">{{ __('dan lainnya') }}</li>
-                </ul>
-                <a href="{{ route('services.android') }}" class="btn-ink mt-10 !min-h-14 !px-7">{{ __('Lihat contoh aplikasinya') }} <x-icon-arrow /></a>
-            </div>
-            <div class="px-6 lg:col-span-5">
-                <x-app-phone :screens="['kasir' => $androidExamples['kasir']]" />
-            </div>
         </div>
     </section>
 

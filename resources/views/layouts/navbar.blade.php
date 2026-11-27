@@ -1,7 +1,7 @@
 @php
     $navItems = [
         ['route' => 'home', 'match' => 'home', 'label' => __('Beranda')],
-        ['route' => 'services.android', 'match' => 'services.android', 'label' => __('Aplikasi Android')],
+        ['route' => 'home', 'fragment' => '#jasa', 'match' => '__none__', 'label' => __('Layanan')],
         ['route' => 'portfolio.index', 'match' => 'portfolio.*', 'label' => __('Portfolio')],
         ['route' => 'articles.index', 'match' => 'articles.*', 'label' => __('Artikel')],
         ['route' => 'jobs.index', 'match' => 'jobs.*', 'label' => __('Karier')],
@@ -22,7 +22,7 @@
             @foreach ($navItems as $item)
                 @php $active = request()->routeIs($item['match']); @endphp
                 <li>
-                    <a href="{{ route($item['route']) }}" @if($active) aria-current="page" @endif
+                    <a href="{{ route($item['route']) . ($item['fragment'] ?? '') }}" @if($active) aria-current="page" @endif
                        class="relative block px-2.5 py-2 text-[0.9rem] font-medium transition-colors xl:px-4 xl:text-[0.95rem] {{ $active ? 'text-dark-300' : 'text-dark-100 hover:text-dark-300' }}">
                         {{ $item['label'] }}
                         @if ($active)
@@ -63,7 +63,7 @@
             @foreach ($navItems as $item)
                 @php $active = request()->routeIs($item['match']); @endphp
                 <li>
-                    <a href="{{ route($item['route']) }}" @if($active) aria-current="page" @endif
+                    <a href="{{ route($item['route']) . ($item['fragment'] ?? '') }}" @if($active) aria-current="page" @endif
                        class="flex items-center justify-between py-4 font-display text-2xl font-bold {{ $active ? 'text-dark-300' : 'text-dark-100' }}">
                         {{ $item['label'] }}
                         @if ($active)
