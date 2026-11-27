@@ -7,6 +7,8 @@ use App\Models\Applicant;
 use App\Models\Client;
 use App\Models\Contact;
 use App\Models\Faq;
+use App\Models\Invoice;
+use App\Models\Order;
 use App\Models\PageView;
 use App\Models\Partner;
 use App\Models\Popup;
@@ -50,7 +52,25 @@ class AdminController extends Controller
             ->take(10)
             ->get();
 
+        // Client projects & money (ported from SIM-Proyek)
+        $orderCounts = Order::query()->selectRaw('status, COUNT(*) as total')->groupBy('status')->pluck('total', 'status');
+        $dueOrders = Order::whereNotIn('status', ['Completed', 'Cancelled'])
+            ->whereDate('deadline', '<=', today()->addDays(7))
+            ->orderBy('deadline')
+            ->take(6)
+            ->get();
+        $yearInvoices = Invoice::with('items')->whereYear('invoice_date', now()->year)->get();
+        $money = [
+            'billed' => (float) $yearInvoices->sum->total,
+            'paid' => (float) $yearInvoices->sum(fn ($i) => (float) $i->paid_amount),
+            'outstanding' => (float) Invoice::with('items')->get()->sum->remaining,
+        ];
+        $paidByMonth = collect(range(1, 12))->map(fn ($m) => (float) $yearInvoices
+            ->filter(fn ($i) => (int) $i->invoice_date->format('n') === $m)
+            ->sum(fn ($i) => (float) $i->paid_amount));
+
         return view('admin.dashboard', compact(
+            'orderCounts', 'dueOrders', 'money', 'paidByMonth',
             'clientCount', 'projectCount', 'contactCount', 'testimonialCount',
             'articleCount', 'popupCount', 'faqCount',
             'serviceCount', 'partnerCount', 'stepCount',

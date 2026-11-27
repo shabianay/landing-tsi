@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="robots" content="noindex, nofollow">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="theme-color" content="#0F1720">
     @php use App\Models\Setting; @endphp
     <link rel="icon" type="image/webp" href="{{ asset(Setting::get('logo', 'logo.webp')) }}">
@@ -23,7 +24,7 @@
             <div class="flex h-16 items-center border-b border-white/10 px-5">
                 @include('layouts.partials.admin-brand')
             </div>
-            @include('layouts.partials.admin-nav')
+            @include('layouts.partials.admin-nav', ['searchId' => 'desktop'])
         </aside>
 
         {{-- Mobile header --}}
@@ -43,10 +44,10 @@
                     <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
                 </button>
             </div>
-            @include('layouts.partials.admin-nav')
+            @include('layouts.partials.admin-nav', ['searchId' => 'mobile'])
         </aside>
 
-        <div class="min-w-0 flex-1">
+        <div class="min-w-0 flex-1 [overflow-x:clip]">
             <div class="h-14 lg:hidden"></div>
             <main id="admin-main" class="mx-auto max-w-8xl p-4 sm:p-6 lg:p-10">
                 @if (session('admin_weak_password') && ! request()->routeIs('admin.account.*'))

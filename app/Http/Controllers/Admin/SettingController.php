@@ -10,8 +10,10 @@ class SettingController extends Controller
 {
     public function index()
     {
-        $groups = Setting::select('group')->distinct()->orderBy('group')->pluck('group');
-        $settings = Setting::orderBy('group')->orderBy('id')->get();
+        // Invoice settings have their own page (Invoice > Pengaturan invoice).
+        $visible = fn ($q) => $q->whereNull('group')->orWhere('group', '!=', 'invoice');
+        $groups = Setting::where($visible)->select('group')->distinct()->orderBy('group')->pluck('group');
+        $settings = Setting::where($visible)->orderBy('group')->orderBy('id')->get();
         return view('admin.settings.index', compact('settings', 'groups'));
     }
 
