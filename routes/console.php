@@ -71,3 +71,34 @@ Artisan::command('admin:password {email}', function (string $email) {
 
     return 0;
 })->purpose('Change an admin password and sign out all of their sessions');
+
+Artisan::command('database:client-config {path}', function (string $path) {
+    $connection = config('database.default');
+    $config = config("database.connections.{$connection}");
+
+    if (! in_array($connection, ['mysql', 'mariadb'], true)) {
+        $this->error('Only MySQL/MariaDB connections are supported.');
+
+        return 1;
+    }
+
+    $quote = fn ($value) => '"'.addcslashes((string) $value, "\\\"").'"';
+    $lines = [
+        '[client]',
+        'host='.$quote($config['host']),
+        'port='.(int) $config['port'],
+        'user='.$quote($config['username']),
+        'password='.$quote($config['password']),
+    ];
+
+    if (file_put_contents($path, implode("\n", $lines)."\n") === false || ! chmod($path, 0600)) {
+        $this->error('Could not write the client config file.');
+
+        return 1;
+    }
+
+    // Only the database name is printed, never credentials.
+    $this->line($config['database']);
+
+    return 0;
+})->purpose('Write a temporary MySQL client config (0600) for shell backups and print the database name');

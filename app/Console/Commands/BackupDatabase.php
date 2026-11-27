@@ -14,6 +14,12 @@ class BackupDatabase extends Command
 
     public function handle(): int
     {
+        if (! function_exists('proc_open')) {
+            $this->error('proc_open is disabled on this PHP installation. Use scripts/backup-database.sh instead.');
+
+            return self::FAILURE;
+        }
+
         $connection = config('database.default');
         $database = config("database.connections.{$connection}.database");
 

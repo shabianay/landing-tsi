@@ -87,7 +87,7 @@ jobs:
           rm -f public_html/hot
           tar -czf "$RUNNER_TEMP/release.tar.gz" \
             app bootstrap config database/migrations database/seeders database/factories \
-            lang public_html resources routes vendor artisan composer.json composer.lock
+            lang public_html resources routes scripts vendor artisan composer.json composer.lock
 
       - name: Configure SSH
         run: |
@@ -149,14 +149,12 @@ jobs:
             fi
           done
 
-          "$PHP" artisan database:backup
+          bash scripts/backup-database.sh
           "$PHP" artisan migrate --force
           "$PHP" artisan optimize:clear
           "$PHP" artisan optimize
           "$PHP" artisan queue:restart || true
 
-          # Keep only the 14 most recent backups.
-          ls -1t storage/app/private/backups/database-*.sql 2>/dev/null | tail -n +15 | xargs -r rm -f
           REMOTE
 
       - name: Smoke test
