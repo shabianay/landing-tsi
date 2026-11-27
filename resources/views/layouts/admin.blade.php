@@ -93,6 +93,10 @@
                 </a>
             </nav>
             <div class="p-4 border-t border-dark-100/5">
+                <a href="{{ route('admin.account.edit') }}" class="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 {{ request()->routeIs('admin.account.*') ? 'bg-primary-50 text-primary-600' : 'text-dark-100/50 hover:bg-dark-50/80 hover:text-dark-300' }}">
+                    <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                    {{ __('Akun Saya') }}
+                </a>
                 <a href="{{ route('home') }}" class="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-dark-100/40 hover:text-primary-600 hover:bg-dark-50/80 transition-all duration-200">
                     <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
                     {{ __('Kembali ke Website') }}
@@ -200,6 +204,10 @@
                 </a>
             </nav>
             <div class="p-4 border-t border-dark-100/5">
+                <a href="{{ route('admin.account.edit') }}" class="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 {{ request()->routeIs('admin.account.*') ? 'bg-primary-50 text-primary-600' : 'text-dark-100/50 hover:bg-dark-50/80 hover:text-dark-300' }}">
+                    <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                    {{ __('Akun Saya') }}
+                </a>
                 <a href="{{ route('home') }}" class="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-dark-100/40 hover:text-primary-600 hover:bg-dark-50/80 transition-all duration-200">
                     <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
                     {{ __('Kembali ke Website') }}
@@ -218,6 +226,12 @@
         <div class="flex-1 lg:pl-0">
             <div class="lg:hidden h-14"></div>
             <div class="p-4 md:p-8 max-w-8xl mx-auto">
+                @if (session('admin_weak_password') && ! request()->routeIs('admin.account.*'))
+                    <div role="alert" class="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-800">
+                        <p><strong>Password admin masih default.</strong> Siapa pun bisa menebaknya. Ganti sekarang untuk mengamankan data pelamar dan konten.</p>
+                        <a href="{{ route('admin.account.edit') }}" class="rounded-lg bg-red-600 px-4 py-2 font-semibold text-white hover:bg-red-700">Ganti password</a>
+                    </div>
+                @endif
                 @yield('content')
             </div>
         </div>
