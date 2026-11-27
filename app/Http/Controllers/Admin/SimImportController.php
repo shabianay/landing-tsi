@@ -31,6 +31,11 @@ class SimImportController extends Controller
             $result = $importer->import($payload, $request->user()->id);
         } catch (InvalidArgumentException $e) {
             return back()->withErrors(['file' => $e->getMessage()]);
+        } catch (\Illuminate\Database\QueryException $e) {
+            // Nothing is saved: the import runs in one transaction.
+            report($e);
+
+            return back()->withErrors(['file' => 'Data di file tidak bisa disimpan (format nilai tidak sesuai). Tidak ada data yang diimpor.']);
         }
 
         ActivityLog::record('imported', 'SIM-Proyek', sprintf(

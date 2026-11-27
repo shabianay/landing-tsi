@@ -122,8 +122,8 @@
             <td style="width: 58%;">
                 <table class="sum" style="padding: 0 18px;">
                     <tr><td class="k">Sub Total</td><td class="colon">:</td><td class="v muted">{{ $rp($invoice->subtotal) }}</td></tr>
-                    <tr><td class="k">PPN 10%</td><td class="colon">:</td><td class="v muted">{{ (float) $invoice->ppn_amount > 0 ? $rp($invoice->ppn_amount) : '-' }}</td></tr>
                     <tr><td class="k">Diskon{{ $invoice->discount_type === 'percent' && (float) $invoice->discount_amount > 0 ? ' ' . rtrim(rtrim(number_format((float) $invoice->discount_amount, 2, ',', '.'), '0'), ',') . '%' : '' }}</td><td class="colon">:</td><td class="v muted">{{ $invoice->calculated_discount_value > 0 ? '- ' . $rp($invoice->calculated_discount_value) : '-' }}</td></tr>
+                    <tr><td class="k">PPN {{ $invoice->ppn_rate_label }}%</td><td class="colon">:</td><td class="v muted">{{ (float) $invoice->ppn_amount > 0 ? $rp($invoice->ppn_amount) : '-' }}</td></tr>
                 </table>
                 <table class="total" style="margin-top: 14px;">
                     <tr>

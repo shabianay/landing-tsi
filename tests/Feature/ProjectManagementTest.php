@@ -85,14 +85,18 @@ class ProjectManagementTest extends TestCase
         ])->assertRedirect(route('admin.invoices.index'));
 
         $invoice = Invoice::with('items')->firstOrFail();
-        // subtotal 1.500.000 + PPN 150.000 - 10% (150.000) = 1.500.000
+        // subtotal 1.500.000 - 10% (150.000) = 1.350.000; PPN 11% of that = 148.500; total 1.498.500
         $this->assertEquals(1500000, $invoice->subtotal);
-        $this->assertEquals(1500000, $invoice->total);
+        $this->assertEquals(148500, (float) $invoice->ppn_amount);
+        $this->assertEquals(11, (float) $invoice->ppn_rate);
+        $this->assertEquals(1498500, $invoice->total);
         $this->assertSame('partial', $invoice->status);
         $this->assertSame('Jl. Melati 1, Jombang', $invoice->client_address);
         $this->assertStringEndsWith('/002', Invoice::nextNumber());
 
-        $this->patch(route('admin.invoices.paid', $invoice), ['paid_amount' => 1500000])->assertRedirect();
+        // A payment above the total is refused.
+        $this->patch(route('admin.invoices.paid', $invoice), ['paid_amount' => 2000000])->assertSessionHasErrors('paid_amount');
+        $this->patch(route('admin.invoices.paid', $invoice), ['paid_amount' => 1498500])->assertRedirect();
         $this->assertSame('paid', $invoice->fresh('items')->status);
 
         $pdf = $this->get(route('admin.invoices.pdf', $invoice));
@@ -129,8 +133,8 @@ class ProjectManagementTest extends TestCase
             ->assertSee('Rp450.000')
             ->assertSee('1 invoice tanpa pembayaran');
 
-        $summary = Invoice::unpaidSummary(Invoice::with('items')->get());
-        $this->assertSame(['total' => 450000.0, 'count' => 1], $summary);
+        $summary = Invoice::summarize(Invoice::query());
+        $this->assertSame(['total' => 750000.0, 'paid' => 100000.0, 'unpaid' => ['total' => 450000.0, 'count' => 1]], $summary);
     }
 
     public function test_invoice_settings_are_saved_and_hidden_from_generic_settings(): void
@@ -171,6 +175,97 @@ class ProjectManagementTest extends TestCase
         $this->assertSame(OrderClient::first()->id, Invoice::first()->order_client_id);
         $this->assertSame('partial', Invoice::with('items')->first()->status);
         $this->assertSame('BLU 0062 a.n. Test', Setting::get('invoice_payment_info'));
+    }
+
+    public function test_editing_a_project_keeps_the_status_set_on_the_board(): void
+    {
+        $this->actingAs($this->admin());
+        $client = $this->client();
+        $order = Order::create(['order_client_id' => $client->id, 'client_name' => $client->name, 'task_type' => 'Web', 'deadline' => today(), 'price' => 1000, 'status' => 'Pending', 'payment_method' => 'QRIS']);
+        $form = ['order_client_id' => $client->id, 'task_type' => 'Web baru', 'deadline' => today()->toDateString(), 'price' => 1000, 'payment_method' => 'QRIS'];
+
+        $this->patchJson(route('admin.orders.status', $order), ['status' => 'Completed'])->assertOk();
+        $this->put(route('admin.orders.update', $order), $form + ['status' => 'Completed'])->assertRedirect();
+        $this->assertSame('Completed', $order->fresh()->status);
+
+        // Picking a status in the form wins; changing a payment date recalculates it.
+        $this->put(route('admin.orders.update', $order), $form + ['status' => 'Cancelled'])->assertRedirect();
+        $this->assertSame('Cancelled', $order->fresh()->status);
+        $order->fresh()->update(['status' => 'Pending']);
+        $this->put(route('admin.orders.update', $order), $form + ['status' => 'Pending', 'payment_date' => today()->toDateString()])->assertRedirect();
+        $this->assertSame('Ongoing', $order->fresh()->status);
+    }
+
+    public function test_invoice_rejects_overpayment_and_oversized_totals(): void
+    {
+        $this->actingAs($this->admin());
+        $client = $this->client();
+        $base = ['invoice_date' => today()->toDateString(), 'order_client_id' => $client->id, 'discount_type' => 'fixed'];
+
+        $this->post(route('admin.invoices.store'), $base + ['paid_amount' => 2000, 'items' => [['name' => 'A', 'qty' => 1, 'price' => 1000]]])
+            ->assertSessionHasErrors('paid_amount');
+        $this->post(route('admin.invoices.store'), $base + ['paid_amount' => 0, 'items' => [['name' => 'A', 'qty' => 100000, 'price' => 9999999999999]]])
+            ->assertSessionHasErrors('items');
+        $this->assertSame(0, Invoice::count());
+    }
+
+    public function test_empty_invoice_number_follows_the_invoice_date(): void
+    {
+        $this->actingAs($this->admin());
+        $client = $this->client();
+        $date = today()->subMonthNoOverflow()->startOfMonth();
+
+        $this->post(route('admin.invoices.store'), [
+            'invoice_date' => $date->toDateString(), 'order_client_id' => $client->id, 'paid_amount' => 0, 'discount_type' => 'fixed',
+            'items' => [['name' => 'A', 'qty' => 1, 'price' => 1000]],
+        ])->assertSessionHasNoErrors();
+
+        $this->assertSame(sprintf('TSI/%s/%s/001', $date->format('m'), $date->format('Y')), Invoice::first()->invoice_number);
+    }
+
+    public function test_invoice_list_filters_and_totals_in_the_database(): void
+    {
+        $this->actingAs($this->admin());
+        foreach ([['P', 1000, 1000], ['D', 1000, 400], ['U', 3000, 0], ['O', 500, 900]] as [$n, $price, $paid]) {
+            Invoice::create(['invoice_number' => $n, 'invoice_date' => today(), 'client_name' => $n, 'paid_amount' => $paid])
+                ->items()->create(['item_name' => 'x', 'item_qty' => 1, 'item_price' => $price]);
+        }
+
+        // Overpaid invoice O counts only up to its total (500).
+        $this->assertSame(['total' => 5500.0, 'paid' => 1900.0, 'unpaid' => ['total' => 3000.0, 'count' => 1]], Invoice::summarize(Invoice::query()));
+        $this->assertSame(['D'], Invoice::query()->paymentStatus('partial')->pluck('invoice_number')->all());
+        $this->assertEquals(3000, Invoice::withAmounts()->where('invoice_number', 'U')->first()->total);
+
+        $this->get(route('admin.invoices.index', ['status' => 'unpaid']))->assertOk()->assertSee('Rp3.000')->assertDontSee('>P<', false);
+    }
+
+    public function test_settings_change_the_ppn_rate_for_new_invoices(): void
+    {
+        $this->actingAs($this->admin());
+        $this->post(route('admin.invoices.settings.update'), ['invoice_company_name' => 'TSI', 'invoice_ppn_rate' => 12])->assertRedirect();
+        $this->assertSame(12.0, Invoice::ppnRate());
+        $this->get(route('admin.invoices.create'))->assertOk()->assertSee('Kenakan PPN 12%');
+    }
+
+    public function test_malformed_import_file_shows_a_message_not_an_error_page(): void
+    {
+        $this->actingAs($this->admin());
+        $file = UploadedFile::fake()->createWithContent('x.json', json_encode(['source' => 'SIM-Proyek', 'clients' => [['email' => 'x@y.z']]]));
+
+        $this->post(route('admin.sim-import.store'), ['file' => $file])->assertRedirect()->assertSessionHasErrors('file');
+        $this->assertSame(0, OrderClient::count());
+    }
+
+    public function test_non_admin_gets_403_even_for_missing_records(): void
+    {
+        $this->actingAs(User::factory()->create(['is_admin' => false]));
+        $this->get(route('admin.invoices.edit', 999))->assertForbidden();
+        $this->get(route('admin.orders.edit', 999))->assertForbidden();
+    }
+
+    public function test_error_pages_use_the_site_design(): void
+    {
+        $this->get('/halaman-yang-tidak-ada')->assertNotFound()->assertSee('Halaman tidak ditemukan')->assertSee('Ke beranda');
     }
 
     public function test_import_upload_rejects_other_files(): void

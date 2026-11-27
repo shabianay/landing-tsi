@@ -19,7 +19,8 @@ class FinancialReportController extends Controller
         $year = (int) ($data['year'] ?? now()->year);
         $month = isset($data['month']) ? (int) $data['month'] : null;
 
-        $yearInvoices = Invoice::with('items')->whereYear('invoice_date', $year)->orderByDesc('invoice_date')->get();
+        // Amounts come from SQL (withAmounts), so no invoice items are loaded.
+        $yearInvoices = Invoice::withAmounts()->whereYear('invoice_date', $year)->orderByDesc('invoice_date')->get();
         $invoices = $month ? $yearInvoices->filter(fn ($i) => (int) $i->invoice_date->format('n') === $month)->values() : $yearInvoices;
 
         $months = collect(range(1, 12))->map(function (int $m) use ($yearInvoices) {
@@ -29,15 +30,18 @@ class FinancialReportController extends Controller
                 'month' => $m,
                 'count' => $items->count(),
                 'total' => (float) $items->sum->total,
-                'paid' => (float) $items->sum(fn ($i) => (float) $i->paid_amount),
+                'paid' => (float) $items->sum->paid_capped,
             ];
         });
 
         $years = Invoice::query()->pluck('invoice_date')->map(fn ($d) => (int) $d->format('Y'))
             ->push(now()->year)->push($year)->unique()->sortDesc()->values();
 
-        $totalRevenue = (float) $invoices->sum->total;
-        $totalPaid = (float) $invoices->sum(fn ($i) => (float) $i->paid_amount);
+        $periodQuery = Invoice::query()->whereYear('invoice_date', $year)
+            ->when($month, fn ($q) => $q->whereMonth('invoice_date', $month));
+        $summary = Invoice::summarize($periodQuery);
+        $totalRevenue = $summary['total'];
+        $totalPaid = $summary['paid'];
 
         return view('admin.financial.index', [
             'year' => $year,
@@ -48,7 +52,7 @@ class FinancialReportController extends Controller
             'maxMonth' => max(1, $months->max('total')),
             'totalRevenue' => $totalRevenue,
             'totalPaid' => $totalPaid,
-            'unpaid' => Invoice::unpaidSummary($invoices),
+            'unpaid' => $summary['unpaid'],
         ]);
     }
 }

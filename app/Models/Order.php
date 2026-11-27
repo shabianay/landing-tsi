@@ -63,6 +63,22 @@ class Order extends Model
         return 'Pending';
     }
 
+    /**
+     * Status after an edit. A status the admin picked (on the board or in the form) is kept;
+     * it is only recalculated when the payment dates themselves change.
+     */
+    public function statusAfterEdit(array $data, ?string $requested = null): string
+    {
+        if ($requested !== null && in_array($requested, self::STATUSES, true) && $requested !== $this->status) {
+            return $requested;
+        }
+
+        $datesChanged = ($data['payment_date'] ?? null) != $this->payment_date?->toDateString()
+            || ($data['payment_lunas_date'] ?? null) != $this->payment_lunas_date?->toDateString();
+
+        return $datesChanged ? self::statusFromPayments($data, $this->status) : $this->status;
+    }
+
     public function isOverdue(): bool
     {
         return $this->deadline !== null

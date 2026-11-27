@@ -7,7 +7,8 @@ Route::middleware('guest')->group(function () {
     Route::get('login', [AuthenticatedSessionController::class, 'create'])
         ->name('login');
 
-    Route::post('login', [AuthenticatedSessionController::class, 'store']);
+    // Per-IP cap on top of LoginRequest's per-email limit, so one address cannot try many emails.
+    Route::post('login', [AuthenticatedSessionController::class, 'store'])->middleware('throttle:20,1');
 });
 
 Route::middleware('auth')->group(function () {

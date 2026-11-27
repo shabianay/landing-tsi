@@ -59,15 +59,16 @@ class AdminController extends Controller
             ->orderBy('deadline')
             ->take(6)
             ->get();
-        $yearInvoices = Invoice::with('items')->whereYear('invoice_date', now()->year)->get();
+        $year = Invoice::summarize(Invoice::query()->whereYear('invoice_date', now()->year));
         $money = [
-            'billed' => (float) $yearInvoices->sum->total,
-            'paid' => (float) $yearInvoices->sum(fn ($i) => (float) $i->paid_amount),
-            'outstanding' => Invoice::unpaidSummary(Invoice::with('items')->get())['total'],
+            'billed' => $year['total'],
+            'paid' => $year['paid'],
+            'outstanding' => Invoice::summarize(Invoice::query())['unpaid']['total'],
         ];
+        $yearInvoices = Invoice::withAmounts()->whereYear('invoice_date', now()->year)->get();
         $paidByMonth = collect(range(1, 12))->map(fn ($m) => (float) $yearInvoices
             ->filter(fn ($i) => (int) $i->invoice_date->format('n') === $m)
-            ->sum(fn ($i) => (float) $i->paid_amount));
+            ->sum->paid_capped);
 
         return view('admin.dashboard', compact(
             'orderCounts', 'dueOrders', 'money', 'paidByMonth',

@@ -86,7 +86,8 @@ class OrderController extends Controller
     public function update(Request $request, Order $order): RedirectResponse
     {
         $data = $this->validated($request);
-        $data['status'] = Order::statusFromPayments($data, $order->status);
+        $requested = $request->validate(['status' => ['nullable', Rule::in(Order::STATUSES)]])['status'] ?? null;
+        $data['status'] = $order->statusAfterEdit($data, $requested);
 
         $order->update($data);
         ActivityLog::record('updated', $order, "Mengubah proyek {$order->client_name} ({$order->task_type})");
