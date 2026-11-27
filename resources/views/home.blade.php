@@ -146,10 +146,8 @@
                 <ul class="cells mt-10 sm:grid-cols-2 {{ $services->count() % 3 === 0 ? 'lg:grid-cols-3' : 'lg:grid-cols-4' }} md:mt-14">
                     @foreach ($services as $s)
                         <li class="group flex flex-col p-6 transition-colors hover:bg-primary-50/50 md:p-8">
-                            <span class="flex h-11 w-11 items-center justify-center bg-dark-300 text-white transition-colors group-hover:bg-primary-500 group-hover:text-dark-300">
-                                <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true">
-                                    <path d="{{ $s->icon ?: 'M13 10V3L4 14h7v7l9-11h-7z' }}" />
-                                </svg>
+                            <span class="flex h-12 w-12 items-center justify-center bg-dark-300 text-white transition-colors group-hover:bg-primary-500 group-hover:text-dark-300">
+                                <x-service-icon :title="$s->title . ' ' . $s->trans('title')" :fallback="$s->icon" class="h-6 w-6" />
                             </span>
                             <h3 class="mt-6 text-lg font-bold text-dark-300">{{ $s->trans('title') }}</h3>
                             <p class="mt-2 text-[0.95rem] text-dark-100">{{ $s->trans('description') }}</p>
