@@ -35,6 +35,65 @@
     </a>
 </div>
 
+{{-- Client projects & money --}}
+@php
+    $monthLabels = ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'];
+    $maxPaid = max(1, $paidByMonth->max());
+@endphp
+<section class="mb-8 grid gap-px border border-line bg-line xl:grid-cols-12">
+    <div class="bg-white xl:col-span-5">
+        <div class="flex items-center justify-between border-b border-line px-5 py-4">
+            <h2 class="font-bold text-dark-300">Proyek klien</h2>
+            <a href="{{ route('admin.orders.index') }}" class="text-sm font-semibold text-primary-700 hover:underline">Buka papan</a>
+        </div>
+        <dl class="grid grid-cols-4 gap-px bg-line">
+            @foreach (\App\Models\Order::STATUS_LABELS as $status => $label)
+                <div class="flex flex-col-reverse bg-white px-4 py-3">
+                    <dt class="text-xs text-dark-100">{{ $label }}</dt>
+                    <dd class="num font-display text-2xl font-extrabold {{ $status === 'Ongoing' ? 'text-primary-700' : 'text-dark-300' }}">{{ $orderCounts[$status] ?? 0 }}</dd>
+                </div>
+            @endforeach
+        </dl>
+        <h3 class="border-y border-line px-5 py-2.5 text-sm font-semibold text-dark-300">Deadline 7 hari ke depan</h3>
+        <ul class="divide-y divide-line">
+            @forelse ($dueOrders as $order)
+                <li>
+                    <a href="{{ route('admin.orders.edit', $order) }}" class="flex items-center justify-between gap-3 px-5 py-2.5 text-sm hover:bg-dark-50">
+                        <span class="min-w-0 truncate"><span class="font-semibold text-dark-300">{{ $order->client_name }}</span> <span class="text-dark-100">· {{ $order->task_type }}</span></span>
+                        <span class="shrink-0 {{ $order->isOverdue() ? 'font-bold text-red-700' : 'text-dark-100' }}">{{ $order->isOverdue() ? 'Lewat ' : '' }}{{ $order->deadline->translatedFormat('d M') }}</span>
+                    </a>
+                </li>
+            @empty
+                <li class="px-5 py-5 text-sm text-dark-100">Tidak ada deadline dekat.</li>
+            @endforelse
+        </ul>
+    </div>
+
+    <div class="bg-white xl:col-span-7">
+        <div class="flex items-center justify-between border-b border-line px-5 py-4">
+            <h2 class="font-bold text-dark-300">Keuangan {{ now()->year }}</h2>
+            <a href="{{ route('admin.financial.index') }}" class="text-sm font-semibold text-primary-700 hover:underline">Laporan lengkap</a>
+        </div>
+        <dl class="grid grid-cols-3 gap-px bg-line">
+            <div class="flex flex-col-reverse bg-white px-5 py-3"><dt class="text-xs text-dark-100">Ditagihkan</dt><dd class="num font-display text-xl font-extrabold text-dark-300">@rp($money['billed'])</dd></div>
+            <div class="flex flex-col-reverse bg-white px-5 py-3"><dt class="text-xs text-dark-100">Uang masuk</dt><dd class="num font-display text-xl font-extrabold text-emerald-700">@rp($money['paid'])</dd></div>
+            <div class="flex flex-col-reverse bg-white px-5 py-3"><dt class="text-xs text-dark-100">Belum dibayar (semua)</dt><dd class="num font-display text-xl font-extrabold text-red-700">@rp($money['outstanding'])</dd></div>
+        </dl>
+        <div class="border-t border-line px-5 pb-4 pt-5">
+            <p class="mb-3 text-xs text-dark-100">Uang masuk per bulan</p>
+            <ol class="flex h-32 items-end gap-1.5">
+                @foreach ($paidByMonth as $i => $amount)
+                    <li class="flex h-full flex-1 flex-col items-center justify-end gap-1">
+                        <span class="w-full {{ $i + 1 === now()->month ? 'bg-primary-500' : 'bg-dark-100/60' }}" style="height: {{ max($amount > 0 ? 4 : 1, round($amount / $maxPaid * 100)) }}%" title="@rp($amount)"></span>
+                        <span class="text-[0.65rem] text-dark-100" aria-hidden="true">{{ $monthLabels[$i] }}</span>
+                        <span class="sr-only">{{ \Illuminate\Support\Carbon::create(null, $i + 1, 1)->locale('id')->translatedFormat('F') }}: @rp($amount)</span>
+                    </li>
+                @endforeach
+            </ol>
+        </div>
+    </div>
+</section>
+
 {{-- Recruitment pipeline --}}
 <section class="mb-8 border border-line bg-white">
     <div class="flex flex-wrap items-center justify-between gap-3 border-b border-line px-5 py-4">
@@ -143,9 +202,9 @@
     <h2 class="border-b border-line px-5 py-4 font-bold text-dark-300">{{ __('Konten website') }}</h2>
     <ul class="grid grid-cols-2 gap-px bg-line sm:grid-cols-3 lg:grid-cols-5">
         @foreach ([
-            ['admin.projects.index', __('Proyek'), $projectCount],
+            ['admin.projects.index', __('Portofolio'), $projectCount],
             ['admin.articles.index', __('Artikel'), $articleCount],
-            ['admin.clients.index', __('Klien'), $clientCount],
+            ['admin.clients.index', __('Klien Portofolio'), $clientCount],
             ['admin.services.index', __('Layanan'), $serviceCount],
             ['admin.process-steps.index', __('Proses'), $stepCount],
             ['admin.testimonials.index', __('Testimonial'), $testimonialCount],

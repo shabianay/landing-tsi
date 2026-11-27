@@ -21,6 +21,13 @@ use App\Http\Controllers\JobController;
 use App\Http\Controllers\Admin\ApplicantController;
 use App\Http\Controllers\Admin\PartnerSalesController;
 use App\Http\Controllers\Admin\AccountController;
+use App\Http\Controllers\Admin\ActivityLogController;
+use App\Http\Controllers\Admin\FinancialReportController;
+use App\Http\Controllers\Admin\InvoiceController;
+use App\Http\Controllers\Admin\OrderClientController;
+use App\Http\Controllers\Admin\OrderController;
+use App\Http\Controllers\Admin\SearchController;
+use App\Http\Controllers\Admin\SimImportController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
@@ -74,6 +81,21 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::resource('settings', SettingController::class)->except(['show']);
     Route::resource('partners', PartnerController::class)->except(['show']);
     Route::resource('process-steps', ProcessStepController::class)->except(['show']);
+
+    // Client project management (ported from SIM-Proyek)
+    Route::get('/search', SearchController::class)->name('search');
+    Route::patch('/orders/{order}/status', [OrderController::class, 'updateStatus'])->whereNumber('order')->name('orders.status');
+    Route::resource('orders', OrderController::class)->except(['show']);
+    Route::resource('order-clients', OrderClientController::class)->except(['show']);
+    Route::get('/invoices/settings', [InvoiceController::class, 'settingsForm'])->name('invoices.settings');
+    Route::post('/invoices/settings', [InvoiceController::class, 'updateSettings'])->name('invoices.settings.update');
+    Route::get('/invoices/{invoice}/pdf', [InvoiceController::class, 'pdf'])->whereNumber('invoice')->name('invoices.pdf');
+    Route::patch('/invoices/{invoice}/paid', [InvoiceController::class, 'updatePaid'])->whereNumber('invoice')->name('invoices.paid');
+    Route::resource('invoices', InvoiceController::class)->except(['show']);
+    Route::get('/financial', [FinancialReportController::class, 'index'])->name('financial.index');
+    Route::get('/activity-logs', [ActivityLogController::class, 'index'])->name('activity-logs.index');
+    Route::get('/import/sim-proyek', [SimImportController::class, 'create'])->name('sim-import.create');
+    Route::post('/import/sim-proyek', [SimImportController::class, 'store'])->middleware('throttle:5,1')->name('sim-import.store');
 });
 
 use Illuminate\Support\Facades\App;
