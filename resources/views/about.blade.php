@@ -5,78 +5,78 @@
 @section('og_title', __('Tentang') . ' — The Solution ID')
 @section('og_description', __('The Solution ID adalah mitra digital terpercaya bagi pelaku bisnis Indonesia. Kami menghadirkan website profesional yang meningkatkan kredibilitas dan penjualan bisnis Anda.'))
 
+@php use App\Models\Setting; @endphp
+
 @section('content')
-<section class="relative pt-36 pb-16 lg:pt-52 lg:pb-24 overflow-hidden">
-    <div class="absolute inset-0 z-0">
-        <div class="glow top-0 -left-40 w-[500px] h-[500px] bg-primary-200/30"></div>
-        <div class="glow bottom-0 -right-40 w-[400px] h-[400px] bg-blue-200/20"></div>
-    </div>
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <nav aria-label="Breadcrumb" class="mb-8">
-            <ol class="flex flex-wrap items-center gap-1.5 text-sm font-medium">
-                <li><a href="{{ url('/') }}" class="text-dark-100/40 hover:text-primary-500 transition-colors">Home</a></li>
-                <li class="flex items-center gap-1.5"><svg class="w-3.5 h-3.5 text-dark-100/20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg><span class="text-dark-100/60">{{ __('Tentang Kami') }}</span></li>
-            </ol>
-        </nav>
-        <span class="section-label mb-8 inline-flex">{{ __('Tentang Kami') }}</span>
-        <h1 class="text-5xl md:text-6xl lg:text-7xl font-bold text-dark-300 leading-[1.05] tracking-tight mb-8 max-w-4xl">{{ __('Mitra Digital Terpercaya') }} <br><span class="gradient-text">{{ __('untuk Bisnis Indonesia') }}</span></h1>
-        <p class="text-lg md:text-xl text-dark-100/60 max-w-2xl leading-relaxed font-medium">{{ __('Kami membantu pelaku bisnis Indonesia membangun kehadiran digital yang profesional, efektif, dan berorientasi pada hasil.') }}</p>
-    </div>
-</section>
+    <x-page-header
+        :title="__('Mitra Digital Terpercaya') . ' ' . __('untuk Bisnis Indonesia')"
+        :lede="__('Kami membantu pelaku bisnis Indonesia membangun kehadiran digital yang profesional, efektif, dan berorientasi pada hasil.')"
+        :crumbs="[['label' => __('Tentang Kami')]]" />
 
-<section class="py-20 lg:py-28 bg-dark-50 section-gradient">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="grid lg:grid-cols-2 gap-20 items-center">
-            <div>
-                <h2 class="text-dark-300 text-4xl md:text-5xl font-bold tracking-tight mb-8"><span class="gradient-text">{{ __('Visi') }}</span> {{ __('Kami') }}</h2>
-                <p class="text-dark-100/60 leading-relaxed mb-12 text-lg font-medium">{{ __('Kami percaya bahwa setiap bisnis, baik skala kecil maupun besar, berhak memiliki kehadiran digital yang profesional. Dengan website yang dirancang dengan baik, bisnis Anda dapat menjangkau lebih banyak pelanggan, membangun kredibilitas, dan meningkatkan penjualan secara signifikan.') }}</p>
-                <div class="grid grid-cols-3 gap-8">
-                    <div class="bg-white/50 backdrop-blur-sm rounded-2xl p-6 border border-dark-100/5">
-                        <div class="text-4xl font-bold gradient-text mb-2">{{ \App\Models\Setting::get('stat_projects', '50+') }}</div>
-                        <div class="text-sm text-dark-100/50 font-medium">{{ __('Proyek Selesai') }}</div>
-                    </div>
-                    <div class="bg-white/50 backdrop-blur-sm rounded-2xl p-6 border border-dark-100/5">
-                        <div class="text-4xl font-bold gradient-text mb-2">{{ \App\Models\Setting::get('stat_clients', '30+') }}</div>
-                        <div class="text-sm text-dark-100/50 font-medium">{{ __('Klien Aktif') }}</div>
-                    </div>
-                    <div class="bg-white/50 backdrop-blur-sm rounded-2xl p-6 border border-dark-100/5">
-                        <div class="text-4xl font-bold gradient-text mb-2">{{ \App\Models\Setting::get('stat_rating', '4.9/5') }}</div>
-                        <div class="text-sm text-dark-100/50 font-medium">{{ __('Rating Kepuasan') }}</div>
-                    </div>
-                </div>
+    <section class="py-16 md:py-24">
+        <div class="wrap grid gap-12 lg:grid-cols-12">
+            <div class="lg:col-span-6">
+                <h2 class="display-2">{{ __('Visi') }} {{ __('Kami') }}</h2>
+                <p class="mt-6 max-w-[60ch] text-lg leading-relaxed text-dark-100">
+                    {{ __('Kami percaya bahwa setiap bisnis, baik skala kecil maupun besar, berhak memiliki kehadiran digital yang profesional. Dengan website yang dirancang dengan baik, bisnis Anda dapat menjangkau lebih banyak pelanggan, membangun kredibilitas, dan meningkatkan penjualan secara signifikan.') }}
+                </p>
             </div>
-            <div class="grid grid-cols-2 gap-6">
-                <div class="card group">
-                    <div class="card-icon">
-                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+
+            <dl class="grid grid-cols-3 gap-1.5 self-start sm:gap-2 lg:col-span-5 lg:col-start-8">
+                @foreach ([
+                    [Setting::get('stat_projects', '50+'), __('Proyek Selesai'), 'bg-dark-100 text-white'],
+                    [Setting::get('stat_clients', '30+'), __('Klien Aktif'), 'bg-dark-100 text-white'],
+                    [Setting::get('stat_rating', '4.9/5'), __('Rating Kepuasan'), 'bg-primary-500 text-dark-300'],
+                ] as [$value, $label, $tone])
+                    <div class="flex aspect-square flex-col justify-between p-3 sm:p-5 {{ $tone }}">
+                        <dt class="text-xs font-medium opacity-90 sm:text-sm">{{ $label }}</dt>
+                        <dd class="num font-display text-2xl font-extrabold leading-none sm:text-4xl">{{ $value }}</dd>
                     </div>
-                    <h3 class="font-bold text-dark-300 mb-2">{{ __('Cepat & Efisien') }}</h3>
-                    <p class="text-dark-100/60 text-sm font-medium">{{ __('Proses pengerjaan transparan dan tepat waktu.') }}</p>
-                </div>
-                <div class="card group">
-                    <div class="card-icon">
-                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
-                    </div>
-                    <h3 class="font-bold text-dark-300 mb-2">{{ __('Custom Desain') }}</h3>
-                    <p class="text-dark-100/60 text-sm font-medium">{{ __('Tampilan unik sesuai branding bisnis Anda.') }}</p>
-                </div>
-                <div class="card group">
-                    <div class="card-icon">
-                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                    </div>
-                    <h3 class="font-bold text-dark-300 mb-2">{{ __('SEO Optimized') }}</h3>
-                    <p class="text-dark-100/60 text-sm font-medium">{{ __('Mudah ditemukan di Google dan mesin pencari.') }}</p>
-                </div>
-                <div class="card group">
-                    <div class="card-icon">
-                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
-                    </div>
-                    <h3 class="font-bold text-dark-300 mb-2">{{ __('Garansi Pasti') }}</h3>
-                    <p class="text-dark-100/60 text-sm font-medium">{{ __('Layanan purna jual untuk ketenangan pikiran.') }}</p>
-                </div>
-            </div>
+                @endforeach
+            </dl>
         </div>
-    </div>
-</section>
+    </section>
 
+    <section class="border-t border-line bg-dark-50 py-16 md:py-24">
+        <div class="wrap">
+            <ul class="cells sm:grid-cols-2 lg:grid-cols-4">
+                @foreach ([
+                    [__('Cepat & Efisien'), __('Proses pengerjaan transparan dan tepat waktu.'), 'M13 10V3L4 14h7v7l9-11h-7z'],
+                    [__('Custom Desain'), __('Tampilan unik sesuai branding bisnis Anda.'), 'M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4'],
+                    [__('SEO Optimized'), __('Mudah ditemukan di Google dan mesin pencari.'), 'M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z'],
+                    [__('Garansi Pasti'), __('Layanan purna jual untuk ketenangan pikiran.'), 'M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z'],
+                ] as [$title, $body, $icon])
+                    <li class="p-6 md:p-8">
+                        <span class="flex h-11 w-11 items-center justify-center bg-dark-300 text-white">
+                            <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><path d="{{ $icon }}" /></svg>
+                        </span>
+                        <h3 class="mt-6 text-lg font-bold text-dark-300">{{ $title }}</h3>
+                        <p class="mt-2 text-[0.95rem] text-dark-100">{{ $body }}</p>
+                    </li>
+                @endforeach
+            </ul>
+        </div>
+    </section>
+
+    @if (isset($partners) && $partners->isNotEmpty())
+        <section class="py-16 md:py-20">
+            <div class="wrap">
+                <h2 class="text-sm font-semibold text-dark-100">{{ __('Dipercaya oleh') }}</h2>
+                <ul class="mt-5 grid grid-cols-2 border-l border-t border-line sm:grid-cols-3 lg:grid-cols-6">
+                    @foreach ($partners as $logo)
+                        <li class="flex h-24 items-center justify-center border-b border-r border-line bg-white px-5">
+                            @if ($logo->logo)
+                                <img src="{{ asset('storage/' . $logo->logo) }}" alt="{{ $logo->name }}" width="400" height="280"
+                                     class="max-h-14 w-auto max-w-full object-contain opacity-80 grayscale" loading="lazy" decoding="async">
+                            @else
+                                <span class="text-center text-sm font-semibold text-dark-100">{{ $logo->name }}</span>
+                            @endif
+                        </li>
+                    @endforeach
+                </ul>
+            </div>
+        </section>
+    @endif
+
+    @include('partials.cta-band')
 @endsection

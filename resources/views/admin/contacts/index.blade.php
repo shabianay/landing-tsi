@@ -6,7 +6,7 @@
 <div class="flex items-center justify-between mb-8">
     <div>
         <h1 class="text-2xl md:text-3xl font-bold text-dark-300 tracking-tight">{{ __('Pesan Masuk') }}</h1>
-        <p class="text-dark-100/50 mt-1 font-medium">{{ __('Pesan dari formulir kontak') }}</p>
+        <p class="text-dark-100 mt-1 font-medium">{{ __('Pesan dari formulir kontak') }}</p>
     </div>
 </div>
 
@@ -17,11 +17,11 @@
     </div>
 @endif
 
-<div class="bg-white rounded-2xl border border-dark-100/5 shadow-sm overflow-hidden">
+<div class="bg-white rounded-2xl border border-line shadow-sm overflow-hidden">
     <div class="overflow-x-auto">
         <table class="w-full text-sm">
             <thead>
-                <tr class="bg-dark-50/50 border-b border-dark-100/5">
+                <tr class="bg-dark-50/50 border-b border-line">
                     <th class="text-left font-semibold text-dark-300 px-5 py-4">{{ __('Nama') }}</th>
                     <th class="text-left font-semibold text-dark-300 px-5 py-4 hidden sm:table-cell">{{ __('Email') }}</th>
                     <th class="text-left font-semibold text-dark-300 px-5 py-4 hidden md:table-cell">{{ __('Subjek') }}</th>
@@ -29,20 +29,20 @@
                     <th class="text-right font-semibold text-dark-300 px-5 py-4">{{ __('Aksi') }}</th>
                 </tr>
             </thead>
-            <tbody class="divide-y divide-dark-100/5">
+            <tbody class="divide-y divide-line">
                 @forelse($contacts as $contact)
                 <tr class="hover:bg-dark-50/30 transition-colors {{ !$contact->is_read ? 'bg-primary-50/40' : '' }}">
                     <td class="px-5 py-4">
                         <div class="flex items-center gap-2.5">
                             @if(!$contact->is_read)
-                                <span class="w-2 h-2 rounded-full bg-primary-500 shrink-0"></span>
+                                <span class="w-2 h-2 rounded-full bg-primary-600 shrink-0"></span>
                             @endif
                             <span class="{{ !$contact->is_read ? 'font-semibold' : 'font-medium' }} text-dark-300">{{ $contact->name }}</span>
                         </div>
                     </td>
-                    <td class="px-5 py-4 text-dark-100/60 hidden sm:table-cell">{{ $contact->email }}</td>
-                    <td class="px-5 py-4 text-dark-100/60 hidden md:table-cell max-w-[200px] truncate">{{ $contact->subject ?? '—' }}</td>
-                    <td class="px-5 py-4 text-dark-100/60 hidden lg:table-cell">{{ $contact->created_at->format('d/m/Y H:i') }}</td>
+                    <td class="px-5 py-4 text-dark-100 hidden sm:table-cell">{{ $contact->email }}</td>
+                    <td class="px-5 py-4 text-dark-100 hidden md:table-cell max-w-[200px] truncate">{{ $contact->subject ?? '—' }}</td>
+                    <td class="px-5 py-4 text-dark-100 hidden lg:table-cell">{{ $contact->created_at->format('d/m/Y H:i') }}</td>
                     <td class="px-5 py-4 text-right">
                         <div class="flex items-center justify-end gap-2">
                             <a href="{{ route('admin.contacts.show', $contact) }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-primary-600 bg-primary-50 rounded-lg hover:bg-primary-100 transition-colors">
@@ -64,9 +64,9 @@
                 <tr>
                     <td colspan="5" class="px-5 py-16 text-center">
                         <div class="w-16 h-16 bg-primary-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                            <svg class="w-8 h-8 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
+                            <svg class="w-8 h-8 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
                         </div>
-                        <p class="text-dark-100/60 font-medium">{{ __('Belum ada pesan.') }}</p>
+                        <p class="text-dark-100 font-medium">{{ __('Belum ada pesan.') }}</p>
                     </td>
                 </tr>
                 @endforelse

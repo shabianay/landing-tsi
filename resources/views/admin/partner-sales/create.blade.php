@@ -6,10 +6,10 @@
 <div class="mb-6">
     <a href="{{ route('admin.partner-sales.index') }}" class="text-sm font-semibold text-primary-600 hover:underline">← Kembali ke pencatatan klien</a>
     <h1 class="mt-4 text-2xl font-bold text-dark-300">Catat calon klien</h1>
-    <p class="mt-1 text-sm leading-6 text-dark-100/60">Catat laporan mitra melalui WhatsApp sebelum mitra menawarkan layanan. Klien perlu menyebutkan kode partner saat menghubungi TSI.</p>
+    <p class="mt-1 text-sm leading-6 text-dark-100">Catat laporan mitra melalui WhatsApp sebelum mitra menawarkan layanan. Klien perlu menyebutkan kode partner saat menghubungi TSI.</p>
 </div>
 
-<form method="POST" action="{{ route('admin.partner-sales.store') }}" class="max-w-2xl space-y-5 rounded-2xl border border-dark-100/5 bg-white p-5 shadow-sm sm:p-7">
+<form method="POST" action="{{ route('admin.partner-sales.store') }}" class="max-w-2xl space-y-5 rounded-2xl border border-line bg-white p-5 shadow-sm sm:p-7">
     @csrf
     @if ($errors->any())
         <div role="alert" class="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
@@ -42,6 +42,6 @@
     @if ($partners->isEmpty())
         <p class="rounded-xl bg-amber-50 p-4 text-sm text-amber-800">Belum ada partner aktif berkode. Aktifkan partner pada halaman Pelamar Sales terlebih dahulu.</p>
     @endif
-    <button @disabled($partners->isEmpty()) class="w-full rounded-xl bg-primary-500 px-4 py-3 text-sm font-semibold text-white hover:bg-primary-600 disabled:cursor-not-allowed disabled:opacity-50">Simpan calon klien</button>
+    <button @disabled($partners->isEmpty()) class="w-full rounded-xl bg-primary-600 px-4 py-3 text-sm font-semibold text-white hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50">Simpan calon klien</button>
 </form>
 @endsection

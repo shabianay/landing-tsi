@@ -40,8 +40,16 @@ document.addEventListener('click', (event) => {
         return;
     }
 
-    if (target.closest('[data-toggle-mobile-menu]')) {
-        document.getElementById('mobile-menu')?.classList.toggle('hidden');
+    const menuToggle = target.closest('[data-toggle-mobile-menu]');
+    if (menuToggle) {
+        const menu = document.getElementById('mobile-menu');
+        if (!menu) return;
+        const opening = menu.classList.contains('hidden');
+        menu.classList.toggle('hidden', !opening);
+        document.documentElement.classList.toggle('overflow-hidden', opening);
+        menuToggle.setAttribute('aria-expanded', String(opening));
+        menuToggle.querySelector('[data-menu-icon="open"]')?.classList.toggle('hidden', opening);
+        menuToggle.querySelector('[data-menu-icon="close"]')?.classList.toggle('hidden', !opening);
         return;
     }
 
