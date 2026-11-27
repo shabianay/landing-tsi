@@ -1,7 +1,6 @@
 @php
     $navItems = [
         ['route' => 'home', 'match' => 'home', 'label' => __('Beranda')],
-        ['route' => 'home', 'fragment' => '#jasa', 'match' => '__none__', 'label' => __('Layanan')],
         ['route' => 'portfolio.index', 'match' => 'portfolio.*', 'label' => __('Portfolio')],
         ['route' => 'articles.index', 'match' => 'articles.*', 'label' => __('Artikel')],
         ['route' => 'jobs.index', 'match' => 'jobs.*', 'label' => __('Karier')],
