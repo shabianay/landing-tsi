@@ -143,7 +143,7 @@ jobs:
 
           # Files that must not be served from the docroot (moved, not deleted).
           mkdir -p storage/app/private/removed-from-docroot
-          for f in info.php robots.txt; do
+          for f in info.php robots.txt test.html; do
             if [ -f "public_html/$f" ]; then
               mv "public_html/$f" "storage/app/private/removed-from-docroot/$f.$(date +%Y%m%d%H%M%S)"
             fi
@@ -166,6 +166,6 @@ jobs:
           done
           code=$(curl -s -o /dev/null -w '%{http_code}' "https://thesolutionid.my.id/storage/og-default.jpg?v=$GITHUB_SHA")
           echo "/storage/og-default.jpg -> $code"; test "$code" = "200"
-          code=$(curl -s -o /dev/null -w '%{http_code}' "https://thesolutionid.my.id/info.php")
+          code=$(curl -s -o /dev/null -w '%{http_code}' "https://thesolutionid.my.id/info.php?v=$GITHUB_SHA")
           echo "/info.php -> $code"; test "$code" != "200"
           curl -sI "https://thesolutionid.my.id/" | grep -i '^content-security-policy:'
