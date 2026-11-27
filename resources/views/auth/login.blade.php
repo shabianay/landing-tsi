@@ -1,5 +1,8 @@
 <x-guest-layout>
-    <x-auth-session-status class="mb-6" :status="session('status')" />
+    <x-auth-session-status class="mb-6 border border-primary-300 bg-primary-50 px-4 py-3 text-sm font-medium text-dark-300" :status="session('status')" />
+    @error('session')
+        <p role="alert" class="mb-6 border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">{{ $message }}</p>
+    @enderror
 
     <form method="POST" action="{{ route('login') }}" class="space-y-5">
         @csrf
