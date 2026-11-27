@@ -55,6 +55,9 @@
                         <a href="{{ route('admin.account.edit') }}" class="inline-flex min-h-10 items-center bg-red-700 px-4 font-semibold text-white hover:bg-red-800">Ganti password</a>
                     </div>
                 @endif
+                @error('session')
+                    <div role="alert" class="mb-6 border border-amber-300 bg-amber-50 px-5 py-4 text-sm text-amber-900">{{ $message }}</div>
+                @enderror
                 @yield('content')
             </main>
         </div>
