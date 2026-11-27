@@ -65,6 +65,20 @@ class Invoice extends Model
         return max(0, $this->subtotal + (float) $this->ppn_amount - $this->calculated_discount_value);
     }
 
+    /**
+     * Invoices with no payment at all. A DP (partial) invoice is not counted:
+     * the client has started paying, so it is not "belum dibayar".
+     *
+     * @param  iterable<self>  $invoices
+     * @return array{total: float, count: int}
+     */
+    public static function unpaidSummary(iterable $invoices): array
+    {
+        $unpaid = collect($invoices)->filter(fn (self $i) => $i->status === 'unpaid');
+
+        return ['total' => (float) $unpaid->sum->total, 'count' => $unpaid->count()];
+    }
+
     public function getRemainingAttribute(): float
     {
         return max(0, $this->total - (float) $this->paid_amount);

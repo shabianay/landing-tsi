@@ -77,7 +77,7 @@
         <dl class="grid grid-cols-3 gap-px bg-line">
             <div class="flex flex-col-reverse bg-white px-5 py-3"><dt class="text-xs text-dark-100">Ditagihkan</dt><dd class="num font-display text-xl font-extrabold text-dark-300">@rp($money['billed'])</dd></div>
             <div class="flex flex-col-reverse bg-white px-5 py-3"><dt class="text-xs text-dark-100">Uang masuk</dt><dd class="num font-display text-xl font-extrabold text-emerald-700">@rp($money['paid'])</dd></div>
-            <div class="flex flex-col-reverse bg-white px-5 py-3"><dt class="text-xs text-dark-100">Belum dibayar (semua)</dt><dd class="num font-display text-xl font-extrabold text-red-700">@rp($money['outstanding'])</dd></div>
+            <div class="flex flex-col-reverse bg-white px-5 py-3"><dt class="text-xs text-dark-100">Belum dibayar (tanpa DP)</dt><dd class="num font-display text-xl font-extrabold text-red-700">@rp($money['outstanding'])</dd></div>
         </dl>
         <div class="border-t border-line px-5 pb-4 pt-5">
             <p class="mb-3 text-xs text-dark-100">Uang masuk per bulan</p>

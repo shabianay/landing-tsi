@@ -63,7 +63,7 @@ class AdminController extends Controller
         $money = [
             'billed' => (float) $yearInvoices->sum->total,
             'paid' => (float) $yearInvoices->sum(fn ($i) => (float) $i->paid_amount),
-            'outstanding' => (float) Invoice::with('items')->get()->sum->remaining,
+            'outstanding' => Invoice::unpaidSummary(Invoice::with('items')->get())['total'],
         ];
         $paidByMonth = collect(range(1, 12))->map(fn ($m) => (float) $yearInvoices
             ->filter(fn ($i) => (int) $i->invoice_date->format('n') === $m)

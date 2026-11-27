@@ -25,7 +25,8 @@
     </div>
     <div class="bg-dark-300 px-5 py-4 text-white">
         <dt class="text-sm text-white/75">Belum dibayar</dt>
-        <dd class="num font-display text-2xl font-extrabold">@rp($totals['remaining'])</dd>
+        <dd class="num font-display text-2xl font-extrabold">@rp($totals['unpaid']['total'])</dd>
+        <dd class="mt-1 text-xs text-white/75">{{ $totals['unpaid']['count'] }} invoice tanpa pembayaran · DP tidak dihitung</dd>
     </div>
 </dl>
 

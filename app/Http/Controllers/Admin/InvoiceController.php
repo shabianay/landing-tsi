@@ -65,7 +65,7 @@ class InvoiceController extends Controller
             'totals' => [
                 'total' => $all->sum->total,
                 'paid' => $all->sum(fn ($i) => (float) $i->paid_amount),
-                'remaining' => $all->sum->remaining,
+                'unpaid' => Invoice::unpaidSummary($all),
             ],
         ]);
     }
