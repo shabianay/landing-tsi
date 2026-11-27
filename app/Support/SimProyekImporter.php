@@ -10,6 +10,7 @@ use App\Models\OrderClient;
 use App\Models\Setting;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 use InvalidArgumentException;
 
 /**
@@ -37,6 +38,8 @@ class SimProyekImporter
         if (! in_array($payload['source'] ?? null, self::SOURCES, true)) {
             throw new InvalidArgumentException('File ini bukan ekspor SIM-Proyek atau arsip invoice.');
         }
+        $this->validateStructure($payload);
+
         // An archive export may replace invoice settings that are already filled in.
         $overrideSettings = (bool) ($payload['override_settings'] ?? false);
 
@@ -98,6 +101,8 @@ class SimProyekImporter
                     'client_address' => $row['client_address'] ?? null,
                     'notes' => $row['notes'] ?? null,
                     'paid_amount' => $row['paid_amount'] ?? 0,
+                    // SIM-Proyek and the archived PDFs charged PPN at 10%.
+                    'ppn_rate' => (float) ($row['ppn_amount'] ?? 0) > 0 ? 10 : 0,
                     'ppn_amount' => $row['ppn_amount'] ?? 0,
                     'discount_amount' => $row['discount_amount'] ?? 0,
                     'discount_type' => ($row['discount_type'] ?? 'fixed') === 'percent' ? 'percent' : 'fixed',
@@ -142,6 +147,62 @@ class SimProyekImporter
         });
 
         return $count;
+    }
+
+    /** Reject a file with missing or wrong fields with a readable message instead of a server error. */
+    private function validateStructure(array $payload): void
+    {
+        $money = ['nullable', 'numeric', 'min:0', 'max:' . Invoice::MAX_AMOUNT];
+        $validator = Validator::make($payload, [
+            'clients' => ['nullable', 'array'],
+            'clients.*.id' => ['required', 'integer'],
+            'clients.*.name' => ['required', 'string', 'max:255'],
+            'clients.*.email' => ['nullable', 'string', 'max:255'],
+            'clients.*.phone' => ['nullable', 'string', 'max:30'],
+            'clients.*.address' => ['nullable', 'string', 'max:2000'],
+            'clients.*.company' => ['nullable', 'string', 'max:255'],
+            'clients.*.notes' => ['nullable', 'string', 'max:5000'],
+            'clients.*.created_at' => ['nullable', 'date'],
+            'clients.*.updated_at' => ['nullable', 'date'],
+            'projects' => ['nullable', 'array'],
+            'projects.*.client_id' => ['nullable', 'integer'],
+            'projects.*.client_name' => ['required', 'string', 'max:255'],
+            'projects.*.task_type' => ['required', 'string', 'max:255'],
+            'projects.*.description' => ['nullable', 'string', 'max:5000'],
+            'projects.*.deadline' => ['required', 'date'],
+            'projects.*.price' => $money,
+            'projects.*.payment_method' => ['nullable', 'string', 'max:30'],
+            'projects.*.payment_date' => ['nullable', 'date'],
+            'projects.*.payment_lunas_date' => ['nullable', 'date'],
+            'projects.*.created_at' => ['nullable', 'date'],
+            'projects.*.updated_at' => ['nullable', 'date'],
+            'invoices' => ['nullable', 'array'],
+            'invoices.*.client_id' => ['nullable', 'integer'],
+            'invoices.*.invoice_number' => ['required', 'string', 'max:50'],
+            'invoices.*.invoice_date' => ['required', 'date'],
+            'invoices.*.client_name' => ['required', 'string', 'max:255'],
+            'invoices.*.client_address' => ['nullable', 'string', 'max:2000'],
+            'invoices.*.notes' => ['nullable', 'string', 'max:5000'],
+            'invoices.*.paid_amount' => $money,
+            'invoices.*.ppn_amount' => $money,
+            'invoices.*.discount_amount' => $money,
+            'invoices.*.created_at' => ['nullable', 'date'],
+            'invoices.*.updated_at' => ['nullable', 'date'],
+            'invoices.*.items' => ['nullable', 'array'],
+            'invoices.*.items.*.item_name' => ['required', 'string', 'max:255'],
+            'invoices.*.items.*.item_qty' => ['required', 'integer', 'min:1', 'max:100000'],
+            'invoices.*.items.*.item_price' => ['required', 'numeric', 'min:0', 'max:' . Invoice::MAX_AMOUNT],
+            'activity_logs' => ['nullable', 'array'],
+            'activity_logs.*.description' => ['nullable', 'string', 'max:5000'],
+            'activity_logs.*.created_at' => ['nullable', 'date'],
+            'settings' => ['nullable', 'array'],
+            'settings.*' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        if ($validator->fails()) {
+            $key = $validator->errors()->keys()[0];
+            throw new InvalidArgumentException("Isi file tidak sesuai format ({$key}): " . $validator->errors()->first());
+        }
     }
 
     /** Keep the original created_at / updated_at from SIM-Proyek. */

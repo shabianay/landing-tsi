@@ -23,11 +23,12 @@
           discount: @js((float) old('discount_amount', $invoice->discount_amount ?? 0)),
           discountType: @js(old('discount_type', $invoice->discount_type ?? 'fixed')),
           paid: @js((float) old('paid_amount', $invoice->paid_amount ?? 0)),
+          ppnRate: @js((float) $ppnRate),
           rp(n) { return 'Rp' + Math.round(n || 0).toLocaleString('id-ID'); },
           get subtotal() { return this.items.reduce((s, i) => s + (Number(i.qty) || 0) * (Number(i.price) || 0), 0); },
-          get ppnValue() { return this.ppn ? this.subtotal * {{ Invoice::PPN_RATE }} : 0; },
           get discountValue() { const d = Number(this.discount) || 0; return this.discountType === 'percent' ? this.subtotal * Math.min(d, 100) / 100 : d; },
-          get total() { return Math.max(0, this.subtotal + this.ppnValue - this.discountValue); },
+          get ppnValue() { return this.ppn ? Math.max(0, this.subtotal - this.discountValue) * this.ppnRate / 100 : 0; },
+          get total() { return Math.max(0, this.subtotal - this.discountValue) + this.ppnValue; },
           get status() { if (this.subtotal <= 0) return '—'; if (this.total <= 0 || this.paid >= this.total) return 'Lunas'; return this.paid > 0 ? 'DP' : 'Belum Bayar'; },
       }"
       class="grid gap-6 xl:grid-cols-12">
@@ -42,8 +43,8 @@
                     @if ($editing)
                         <p class="num field bg-dark-50">{{ $invoice->invoice_number }}</p>
                     @else
-                        <input id="invoice_number" name="invoice_number" value="{{ old('invoice_number', $invoice->invoice_number) }}" required maxlength="50" class="field num" @error('invoice_number') aria-invalid="true" @enderror>
-                        <p class="field-hint">Dibuat otomatis, bisa diubah bila perlu.</p>
+                        <input id="invoice_number" name="invoice_number" value="{{ old('invoice_number') }}" maxlength="50" placeholder="Otomatis, mis. {{ Invoice::nextNumber(today()) }}" class="field num" @error('invoice_number') aria-invalid="true" @enderror>
+                        <p class="field-hint">Kosongkan agar nomor dibuat otomatis sesuai bulan tanggal invoice.</p>
                     @endif
                 </div>
                 <div>
@@ -110,7 +111,7 @@
             <label class="flex items-center gap-3">
                 <input type="hidden" name="use_ppn" value="0">
                 <input type="checkbox" name="use_ppn" value="1" x-model="ppn" class="h-5 w-5 rounded-sm border-dark-100/50 text-primary-600">
-                <span class="font-semibold text-dark-300">Kenakan PPN 10%</span>
+                <span class="font-semibold text-dark-300">Kenakan PPN {{ rtrim(rtrim(number_format($ppnRate, 2, ",", "."), "0"), ",") }}%</span>
             </label>
             <div>
                 <span class="field-label">Diskon</span>
@@ -124,13 +125,14 @@
             </div>
             <div>
                 <label for="paid_amount" class="field-label">Sudah dibayar (Rp) *</label>
-                <input id="paid_amount" type="number" name="paid_amount" min="0" step="1000" x-model.number="paid" required class="field num">
+                <input id="paid_amount" type="number" name="paid_amount" min="0" step="any" :max="total" x-model.number="paid" required class="field num" @error('paid_amount') aria-invalid="true" @enderror>
+                <p class="field-hint" x-show="paid > total" x-cloak>Melebihi total invoice.</p>
             </div>
 
             <dl class="num space-y-1.5 border-t border-line pt-4 text-sm">
                 <div class="flex justify-between"><dt class="text-dark-100">Subtotal</dt><dd x-text="rp(subtotal)"></dd></div>
-                <div class="flex justify-between"><dt class="text-dark-100">PPN 10%</dt><dd x-text="rp(ppnValue)"></dd></div>
                 <div class="flex justify-between"><dt class="text-dark-100">Diskon</dt><dd x-text="'−' + rp(discountValue)"></dd></div>
+                <div class="flex justify-between"><dt class="text-dark-100">PPN (dari harga setelah diskon)</dt><dd x-text="rp(ppnValue)"></dd></div>
                 <div class="flex items-baseline justify-between border-t border-line pt-3 text-base"><dt class="font-bold text-dark-300">Total</dt><dd class="font-display text-2xl font-extrabold text-dark-300" x-text="rp(total)"></dd></div>
                 <div class="flex justify-between"><dt class="text-dark-100">Status</dt><dd class="font-semibold text-dark-300" x-text="status"></dd></div>
             </dl>

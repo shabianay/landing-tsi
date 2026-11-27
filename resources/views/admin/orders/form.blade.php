@@ -11,7 +11,9 @@
 @section('content')
 @include('admin.partials.pm-head', [
     'title' => $editing ? 'Ubah proyek' : 'Proyek baru',
-    'subtitle' => 'Status terisi otomatis: ada tanggal DP berarti Dikerjakan, ada tanggal lunas berarti Selesai.',
+    'subtitle' => $editing
+        ? 'Status yang Anda pilih dipertahankan. Bila tanggal DP atau lunas diubah, status menyesuaikan otomatis.'
+        : 'Status terisi otomatis: ada tanggal DP berarti Dikerjakan, ada tanggal lunas berarti Selesai.',
 ])
 
 <form method="POST" action="{{ $editing ? route('admin.orders.update', [$order, 'return' => request('return')]) : route('admin.orders.store') }}" class="max-w-3xl space-y-6 border border-line bg-white p-5 sm:p-8">
@@ -78,6 +80,16 @@
             <label for="payment_lunas_date" class="field-label">Tanggal lunas</label>
             <input id="payment_lunas_date" type="date" name="payment_lunas_date" value="{{ $date('payment_lunas_date') }}" class="field">
         </div>
+        @if ($editing)
+            <div>
+                <label for="status" class="field-label">Status</label>
+                <select id="status" name="status" class="field">
+                    @foreach (Order::STATUS_LABELS as $value => $label)
+                        <option value="{{ $value }}" @selected(old('status', $order->status) === $value)>{{ $label }}</option>
+                    @endforeach
+                </select>
+            </div>
+        @endif
     </div>
 
     <div class="flex flex-wrap items-center gap-3 border-t border-line pt-6">

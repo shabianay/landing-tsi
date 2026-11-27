@@ -13,6 +13,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -39,34 +40,20 @@ class InvoiceController extends Controller
             'q' => ['nullable', 'string', 'max:100'],
         ]);
 
-        $query = Invoice::with('items')->orderByDesc('invoice_date')->orderByDesc('id');
-
+        // Filtering, paging and totals all run in the database (amounts are SQL expressions).
+        $query = Invoice::query();
         if (! empty($filters['q'])) {
             $term = '%' . addcslashes($filters['q'], '%_\\') . '%';
             $query->where(fn ($q) => $q->where('client_name', 'like', $term)->orWhere('invoice_number', 'like', $term));
         }
-
-        // Status is computed from items, so filter in PHP on the (small) result set.
-        $all = $query->get();
         if (! empty($filters['status'])) {
-            $all = $all->filter(fn (Invoice $i) => $i->status === $filters['status'])->values();
+            $query->paymentStatus($filters['status']);
         }
 
-        $page = max(1, $request->integer('page', 1));
-        $perPage = 15;
-        $invoices = new \Illuminate\Pagination\LengthAwarePaginator(
-            $all->forPage($page, $perPage)->values(), $all->count(), $perPage, $page,
-            ['path' => $request->url(), 'query' => $request->query()]
-        );
-
         return view('admin.invoices.index', [
-            'invoices' => $invoices,
+            'invoices' => (clone $query)->withAmounts()->orderByDesc('invoice_date')->orderByDesc('id')->paginate(15)->withQueryString(),
             'filters' => $filters,
-            'totals' => [
-                'total' => $all->sum->total,
-                'paid' => $all->sum(fn ($i) => (float) $i->paid_amount),
-                'unpaid' => Invoice::unpaidSummary($all),
-            ],
+            'totals' => Invoice::summarize($query),
         ]);
     }
 
@@ -74,26 +61,40 @@ class InvoiceController extends Controller
     {
         return view('admin.invoices.form', [
             'invoice' => new Invoice([
-                'invoice_number' => Invoice::nextNumber(),
                 'invoice_date' => today(),
                 'discount_type' => 'fixed',
                 'paid_amount' => 0,
             ]),
             'clients' => OrderClient::orderBy('name')->get(),
             'selectedClient' => $request->integer('client') ?: null,
+            'ppnRate' => Invoice::ppnRate(),
         ]);
     }
 
     public function store(Request $request): RedirectResponse
     {
         $data = $this->validated($request);
+        $attributes = $this->invoiceAttributes($data, Invoice::ppnRate());
+        $manualNumber = $data['invoice_number'] ?? null;
 
-        $invoice = DB::transaction(function () use ($data) {
-            $invoice = Invoice::create($this->invoiceAttributes($data) + ['invoice_number' => $data['invoice_number']]);
-            $this->syncItems($invoice, $data);
+        // An empty number is generated from the invoice date. If two invoices are saved at the
+        // same moment and get the same number, the unique index rejects one: try the next number.
+        $invoice = null;
+        for ($attempt = 1; $invoice === null; $attempt++) {
+            $number = $manualNumber ?: Invoice::nextNumber(\Illuminate\Support\Carbon::parse($data['invoice_date']));
+            try {
+                $invoice = DB::transaction(function () use ($attributes, $number, $data) {
+                    $invoice = Invoice::create($attributes + ['invoice_number' => $number]);
+                    $this->syncItems($invoice, $data);
 
-            return $invoice;
-        });
+                    return $invoice;
+                });
+            } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
+                if ($manualNumber || $attempt >= 3) {
+                    throw ValidationException::withMessages(['invoice_number' => "Nomor invoice {$number} sudah dipakai. Simpan ulang untuk memakai nomor berikutnya."]);
+                }
+            }
+        }
 
         ActivityLog::record('created', $invoice, "Membuat invoice {$invoice->invoice_number}");
 
@@ -110,15 +111,17 @@ class InvoiceController extends Controller
             'invoice' => $invoice,
             'clients' => OrderClient::orderBy('name')->get(),
             'selectedClient' => $invoice->order_client_id,
+            'ppnRate' => $this->rateFor($invoice),
         ]);
     }
 
     public function update(Request $request, Invoice $invoice): RedirectResponse
     {
         $data = $this->validated($request, $invoice);
+        $attributes = $this->invoiceAttributes($data, $this->rateFor($invoice));
 
-        DB::transaction(function () use ($invoice, $data) {
-            $invoice->update($this->invoiceAttributes($data));
+        DB::transaction(function () use ($invoice, $data, $attributes) {
+            $invoice->update($attributes);
             $this->syncItems($invoice, $data);
         });
 
@@ -132,7 +135,13 @@ class InvoiceController extends Controller
     /** Record a payment: the amount paid so far. */
     public function updatePaid(Request $request, Invoice $invoice): RedirectResponse
     {
-        $data = $request->validate(['paid_amount' => ['required', 'numeric', 'min:0', 'max:9999999999999']], [], ['paid_amount' => 'jumlah dibayar']);
+        $invoice->load('items');
+        $total = $invoice->total;
+        $data = $request->validate(
+            ['paid_amount' => ['required', 'numeric', 'min:0', 'max:' . $total]],
+            ['paid_amount.max' => 'Jumlah dibayar tidak boleh melebihi total invoice (Rp' . number_format($total, 0, ',', '.') . ').'],
+            ['paid_amount' => 'jumlah dibayar'],
+        );
 
         $invoice->update(['paid_amount' => $data['paid_amount']]);
         ActivityLog::record('updated', $invoice, "Mencatat pembayaran invoice {$invoice->invoice_number}: Rp" . number_format((float) $data['paid_amount'], 0, ',', '.'));
@@ -162,7 +171,7 @@ class InvoiceController extends Controller
 
     public function settingsForm(): View
     {
-        return view('admin.invoices.settings', ['settings' => $this->settings(), 'fields' => self::SETTINGS]);
+        return view('admin.invoices.settings', ['settings' => $this->settings(), 'fields' => self::SETTINGS, 'ppnRate' => Invoice::ppnRate()]);
     }
 
     public function updateSettings(Request $request): RedirectResponse
@@ -175,12 +184,16 @@ class InvoiceController extends Controller
             'invoice_payment_info' => ['nullable', 'string', 'max:1000'],
             'invoice_payment_note' => ['nullable', 'string', 'max:1000'],
             'invoice_footer' => ['nullable', 'string', 'max:500'],
+            'invoice_ppn_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
             // PNG/JPG only: the PDF renderer cannot embed WebP or SVG.
             'invoice_logo' => ['nullable', 'image', 'mimes:png,jpg,jpeg', 'max:2048'],
         ]);
 
         foreach (array_keys(self::SETTINGS) as $key) {
             Setting::updateOrCreate(['key' => $key], ['value' => $data[$key] ?? '', 'group' => 'invoice', 'label' => self::SETTINGS[$key]]);
+        }
+        if (isset($data['invoice_ppn_rate'])) {
+            Setting::updateOrCreate(['key' => 'invoice_ppn_rate'], ['value' => (string) (float) $data['invoice_ppn_rate'], 'group' => 'invoice', 'label' => 'Tarif PPN (%)']);
         }
 
         if ($request->hasFile('invoice_logo')) {
@@ -228,10 +241,37 @@ class InvoiceController extends Controller
         return 'data:' . $mime . ';base64,' . base64_encode(Storage::disk('public')->get($path));
     }
 
+    /** Keep the rate an invoice was issued with; invoices without PPN use the current setting. */
+    private function rateFor(Invoice $invoice): float
+    {
+        return (float) $invoice->ppn_rate > 0 ? (float) $invoice->ppn_rate : Invoice::ppnRate();
+    }
+
     private function validated(Request $request, ?Invoice $invoice = null): array
     {
+        $data = $this->validateFields($request, $invoice);
+
+        // Amounts must fit the money columns, and a payment cannot exceed the invoice total.
+        $amounts = Invoice::calculate(
+            $data['items'], (float) ($data['discount_amount'] ?? 0), $data['discount_type'],
+            ! empty($data['use_ppn']), $invoice ? $this->rateFor($invoice) : Invoice::ppnRate(),
+        );
+        $max = Invoice::MAX_AMOUNT;
+        if ($amounts['subtotal'] > $max || $amounts['total'] > $max) {
+            throw ValidationException::withMessages(['items' => 'Total invoice terlalu besar (maksimal Rp' . number_format($max, 0, ',', '.') . ').']);
+        }
+        if ((float) $data['paid_amount'] > $amounts['total']) {
+            throw ValidationException::withMessages(['paid_amount' => 'Jumlah dibayar tidak boleh melebihi total invoice (Rp' . number_format($amounts['total'], 0, ',', '.') . ').']);
+        }
+
+        return $data;
+    }
+
+    private function validateFields(Request $request, ?Invoice $invoice): array
+    {
         return $request->validate([
-            'invoice_number' => [$invoice ? 'prohibited' : 'required', 'string', 'max:50', Rule::unique('invoices', 'invoice_number')],
+            // Left empty, the number is generated from the invoice date (TSI/MM/YYYY/NNN).
+            'invoice_number' => [$invoice ? 'prohibited' : 'nullable', 'string', 'max:50', Rule::unique('invoices', 'invoice_number')],
             'invoice_date' => ['required', 'date'],
             'order_client_id' => ['required', 'exists:order_clients,id'],
             'notes' => ['nullable', 'string', 'max:2000'],
@@ -257,14 +297,15 @@ class InvoiceController extends Controller
         ]);
     }
 
-    private function invoiceAttributes(array $data): array
+    private function invoiceAttributes(array $data, float $ppnRate): array
     {
         $client = OrderClient::findOrFail($data['order_client_id']);
-        $subtotal = collect($data['items'])->sum(fn ($i) => $i['qty'] * $i['price']);
         $discount = (float) ($data['discount_amount'] ?? 0);
         if ($data['discount_type'] === 'percent') {
             $discount = min($discount, 100);
         }
+        $usePpn = ! empty($data['use_ppn']);
+        $amounts = Invoice::calculate($data['items'], $discount, $data['discount_type'], $usePpn, $ppnRate);
 
         return [
             'invoice_date' => $data['invoice_date'],
@@ -273,7 +314,8 @@ class InvoiceController extends Controller
             'client_address' => $client->address,
             'notes' => $data['notes'] ?? null,
             'paid_amount' => $data['paid_amount'],
-            'ppn_amount' => ! empty($data['use_ppn']) ? round($subtotal * Invoice::PPN_RATE, 2) : 0,
+            'ppn_rate' => $usePpn ? $ppnRate : 0,
+            'ppn_amount' => $amounts['ppn'],
             'discount_amount' => $discount,
             'discount_type' => $data['discount_type'],
         ];

@@ -18,6 +18,12 @@ $app = Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'admin' => \App\Http\Middleware\AdminMiddleware::class,
         ]);
+        // Check admin rights before route-model binding, so a non-admin gets 403 for every
+        // admin URL instead of learning (via 404) which record IDs exist.
+        $middleware->prependToPriorityList(
+            \Illuminate\Routing\Middleware\SubstituteBindings::class,
+            \App\Http\Middleware\AdminMiddleware::class,
+        );
         $middleware->web(append: [
             \App\Http\Middleware\SecurityHeaders::class,
             \App\Http\Middleware\SetLocale::class,

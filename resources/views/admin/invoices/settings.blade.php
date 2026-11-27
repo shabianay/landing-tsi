@@ -40,6 +40,11 @@
         <textarea id="invoice_payment_note" name="invoice_payment_note" rows="3" maxlength="1000" class="field">{{ old('invoice_payment_note', $settings['invoice_payment_note']) }}</textarea>
         <p class="field-hint">Dicetak di bawah info pembayaran, misalnya ketentuan DP. Kosongkan bila tidak perlu.</p>
     </div>
+    <div class="max-w-xs">
+        <label for="invoice_ppn_rate" class="field-label">Tarif PPN (%)</label>
+        <input id="invoice_ppn_rate" type="number" name="invoice_ppn_rate" min="0" max="100" step="0.01" value="{{ old('invoice_ppn_rate', $ppnRate) }}" class="field num" @error('invoice_ppn_rate') aria-invalid="true" @enderror>
+        <p class="field-hint">Dipakai untuk invoice baru yang dicentang "Kenakan PPN", dihitung dari harga setelah diskon. Invoice lama tetap memakai tarif saat dibuat.</p>
+    </div>
     <div>
         <label for="invoice_footer" class="field-label">Catatan kaki</label>
         <input id="invoice_footer" name="invoice_footer" value="{{ old('invoice_footer', $settings['invoice_footer']) }}" maxlength="500" class="field">

@@ -57,7 +57,7 @@
                 @csrf
                 @method('PATCH')
                 <label class="sr-only" for="m-paid-{{ $invoice->id }}">Jumlah dibayar</label>
-                <input id="m-paid-{{ $invoice->id }}" type="number" name="paid_amount" min="0" step="1000" value="{{ (int) $invoice->paid_amount }}" class="field num !py-2">
+                <input id="m-paid-{{ $invoice->id }}" type="number" name="paid_amount" min="0" max="{{ $invoice->total }}" step="any" value="{{ (float) $invoice->paid_amount }}" class="field num !py-2">
                 <button type="submit" class="btn-ink !min-h-0 !px-4 text-sm">Simpan</button>
             </form>
             <div class="mt-3 flex flex-wrap gap-x-4 gap-y-1 border-t border-line pt-3 text-sm">
@@ -98,7 +98,7 @@
                             @csrf
                             @method('PATCH')
                             <label class="sr-only" for="paid-{{ $invoice->id }}">Jumlah dibayar</label>
-                            <input id="paid-{{ $invoice->id }}" type="number" name="paid_amount" min="0" step="1000" value="{{ (int) $invoice->paid_amount }}" class="w-32 border-line py-1 text-right text-sm">
+                            <input id="paid-{{ $invoice->id }}" type="number" name="paid_amount" min="0" max="{{ $invoice->total }}" step="any" value="{{ (float) $invoice->paid_amount }}" class="w-32 border-line py-1 text-right text-sm">
                             <button type="submit" class="bg-dark-300 px-2.5 text-xs font-semibold text-white">Simpan</button>
                         </form>
                     </td>
