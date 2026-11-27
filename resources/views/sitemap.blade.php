@@ -6,6 +6,11 @@
         <changefreq>weekly</changefreq>
     </url>
     <url>
+        <loc>{{ route('services.android') }}</loc>
+        <priority>0.9</priority>
+        <changefreq>monthly</changefreq>
+    </url>
+    <url>
         <loc>{{ route('portfolio.index') }}</loc>
         <priority>0.9</priority>
         <changefreq>weekly</changefreq>

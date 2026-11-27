@@ -1,6 +1,7 @@
 @php
     $navItems = [
         ['route' => 'home', 'match' => 'home', 'label' => __('Beranda')],
+        ['route' => 'services.android', 'match' => 'services.android', 'label' => __('Aplikasi Android')],
         ['route' => 'portfolio.index', 'match' => 'portfolio.*', 'label' => __('Portfolio')],
         ['route' => 'articles.index', 'match' => 'articles.*', 'label' => __('Artikel')],
         ['route' => 'jobs.index', 'match' => 'jobs.*', 'label' => __('Karier')],
@@ -22,10 +23,10 @@
                 @php $active = request()->routeIs($item['match']); @endphp
                 <li>
                     <a href="{{ route($item['route']) }}" @if($active) aria-current="page" @endif
-                       class="relative block px-3.5 py-2 text-[0.95rem] font-medium transition-colors xl:px-4 {{ $active ? 'text-dark-300' : 'text-dark-100 hover:text-dark-300' }}">
+                       class="relative block px-2.5 py-2 text-[0.9rem] font-medium transition-colors xl:px-4 xl:text-[0.95rem] {{ $active ? 'text-dark-300' : 'text-dark-100 hover:text-dark-300' }}">
                         {{ $item['label'] }}
                         @if ($active)
-                            <span class="absolute inset-x-3.5 -bottom-[calc(0.9rem+1px)] h-[3px] bg-primary-500 xl:inset-x-4" aria-hidden="true"></span>
+                            <span class="absolute inset-x-2.5 -bottom-[calc(0.9rem+1px)] h-[3px] bg-primary-500 xl:inset-x-4" aria-hidden="true"></span>
                         @endif
                     </a>
                 </li>
