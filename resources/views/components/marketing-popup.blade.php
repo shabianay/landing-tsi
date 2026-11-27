@@ -30,7 +30,7 @@
      @keydown.escape.window="close()"
      class="fixed inset-0 z-[60] flex items-end justify-center sm:items-center sm:p-6"
      role="dialog" aria-modal="true" aria-labelledby="popup-title-0">
-    <div class="absolute inset-0 bg-dark-300/60" @click="close()"
+    <div class="absolute inset-0 bg-dark-300/60" aria-hidden="true"
          x-show="open"
          x-transition:enter="transition duration-300 ease-out" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
          x-transition:leave="transition duration-200 ease-in" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"></div>
