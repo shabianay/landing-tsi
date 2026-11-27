@@ -166,6 +166,11 @@ jobs:
           done
           code=$(curl -s -o /dev/null -w '%{http_code}' "https://thesolutionid.my.id/storage/og-default.jpg?v=$GITHUB_SHA")
           echo "/storage/og-default.jpg -> $code"; test "$code" = "200"
-          code=$(curl -s -o /dev/null -w '%{http_code}' "https://thesolutionid.my.id/info.php?v=$GITHUB_SHA")
-          echo "/info.php -> $code"; test "$code" != "200"
+          code=$(curl -s -D /tmp/info.headers -o /tmp/info.body -w '%{http_code}' "https://thesolutionid.my.id/info.php?v=$GITHUB_SHA")
+          echo "/info.php -> $code"
+          if [ "$code" = "200" ]; then
+            grep -iE '^(server|cf-|content-type|x-)' /tmp/info.headers || true
+            grep -o '<title>[^<]*' /tmp/info.body || head -c 300 /tmp/info.body
+            exit 1
+          fi
           curl -sI "https://thesolutionid.my.id/" | grep -i '^content-security-policy:'
