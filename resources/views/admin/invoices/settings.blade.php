@@ -36,13 +36,18 @@
         <p class="field-hint">Nomor rekening atau e-wallet tujuan transfer. Dicetak di kiri bawah invoice.</p>
     </div>
     <div>
+        <label for="invoice_payment_note" class="field-label">Catatan pembayaran</label>
+        <textarea id="invoice_payment_note" name="invoice_payment_note" rows="3" maxlength="1000" class="field">{{ old('invoice_payment_note', $settings['invoice_payment_note']) }}</textarea>
+        <p class="field-hint">Dicetak di bawah info pembayaran, misalnya ketentuan DP. Kosongkan bila tidak perlu.</p>
+    </div>
+    <div>
         <label for="invoice_footer" class="field-label">Catatan kaki</label>
         <input id="invoice_footer" name="invoice_footer" value="{{ old('invoice_footer', $settings['invoice_footer']) }}" maxlength="500" class="field">
     </div>
     <div>
         <label for="invoice_logo" class="field-label">Logo invoice (PNG/JPG, maks. 2 MB)</label>
         <input id="invoice_logo" type="file" name="invoice_logo" accept="image/png,image/jpeg" class="field !py-2">
-        <p class="field-hint">{{ ! empty($settings['invoice_logo']) ? 'Logo sudah diunggah. Unggah lagi untuk mengganti.' : 'Kosongkan untuk memakai blok logo bawaan.' }}</p>
+        <p class="field-hint">{{ ! empty($settings['invoice_logo']) ? 'Logo sudah diunggah. Unggah lagi untuk mengganti.' : 'Kosongkan untuk memakai logo website.' }}</p>
     </div>
 
     <div class="flex flex-wrap gap-3 border-t border-line pt-6">

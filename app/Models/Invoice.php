@@ -35,11 +35,11 @@ class Invoice extends Model
         return $this->belongsTo(OrderClient::class, 'order_client_id');
     }
 
-    /** Next number in the SIM-Proyek format INV/TSI/MM/YYYY/NNN, restarting every month. */
+    /** Next number in the studio's format TSI/MM/YYYY/NNN, restarting every month. */
     public static function nextNumber(?\DateTimeInterface $date = null): string
     {
         $date ??= now();
-        $prefix = sprintf('INV/TSI/%s/%s/', $date->format('m'), $date->format('Y'));
+        $prefix = sprintf('TSI/%s/%s/', $date->format('m'), $date->format('Y'));
         $last = static::where('invoice_number', 'like', $prefix . '%')
             ->pluck('invoice_number')
             ->map(fn ($n) => (int) substr($n, strlen($prefix)))

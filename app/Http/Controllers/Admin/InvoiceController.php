@@ -26,8 +26,11 @@ class InvoiceController extends Controller
         'invoice_company_phone' => 'Telepon',
         'invoice_company_email' => 'Email',
         'invoice_payment_info' => 'Info pembayaran (rekening)',
+        'invoice_payment_note' => 'Catatan pembayaran',
         'invoice_footer' => 'Catatan kaki invoice',
     ];
+
+    public const DEFAULT_PAYMENT_NOTE = 'Mohon melakukan pembayaran uang muka (DP) sebesar 50% dari total harga yang tertera melalui metode pembayaran di atas.';
 
     public function index(Request $request): View
     {
@@ -170,6 +173,7 @@ class InvoiceController extends Controller
             'invoice_company_phone' => ['nullable', 'string', 'max:50'],
             'invoice_company_email' => ['nullable', 'email', 'max:255'],
             'invoice_payment_info' => ['nullable', 'string', 'max:1000'],
+            'invoice_payment_note' => ['nullable', 'string', 'max:1000'],
             'invoice_footer' => ['nullable', 'string', 'max:500'],
             // PNG/JPG only: the PDF renderer cannot embed WebP or SVG.
             'invoice_logo' => ['nullable', 'image', 'mimes:png,jpg,jpeg', 'max:2048'],
@@ -203,14 +207,18 @@ class InvoiceController extends Controller
             'invoice_company_phone' => Setting::get('contact_phone', ''),
             'invoice_company_email' => Setting::get('contact_email', ''),
             'invoice_payment_info' => '',
-            'invoice_footer' => 'Terima kasih atas kepercayaan Anda.',
+            'invoice_payment_note' => self::DEFAULT_PAYMENT_NOTE,
+            'invoice_footer' => 'Thanks for Your Business With Us.',
         ];
     }
 
     private function logoDataUri(?string $path): ?string
     {
+        // Default: the site logo as PNG (the PDF renderer cannot read WebP).
         if (! $path || ! Storage::disk('public')->exists($path)) {
-            return null;
+            $default = resource_path('invoice/logo.png');
+
+            return is_file($default) ? 'data:image/png;base64,' . base64_encode((string) file_get_contents($default)) : null;
         }
         $mime = Storage::disk('public')->mimeType($path);
         if (! in_array($mime, ['image/png', 'image/jpeg'], true)) {

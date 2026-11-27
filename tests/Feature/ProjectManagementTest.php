@@ -76,7 +76,7 @@ class ProjectManagementTest extends TestCase
         $this->actingAs($this->admin());
         $client = $this->client();
         $number = Invoice::nextNumber();
-        $this->assertMatchesRegularExpression('#^INV/TSI/\d{2}/\d{4}/001$#', $number);
+        $this->assertMatchesRegularExpression('#^TSI/\d{2}/\d{4}/001$#', $number);
 
         $this->post(route('admin.invoices.store'), [
             'invoice_number' => $number, 'invoice_date' => today()->toDateString(), 'order_client_id' => $client->id,
