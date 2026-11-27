@@ -12,4 +12,9 @@ export default defineConfig({
             refresh: true,
         }),
     ],
+    // Serve on an IPv4 address: CSP host-sources cannot express IPv6 literals like [::1],
+    // so the dev server's CSS would be blocked by the Content-Security-Policy.
+    server: {
+        host: '127.0.0.1',
+    },
 });

@@ -20,6 +20,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\JobController;
 use App\Http\Controllers\Admin\ApplicantController;
 use App\Http\Controllers\Admin\PartnerSalesController;
+use App\Http\Controllers\Admin\AccountController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
@@ -42,6 +43,9 @@ Route::middleware('auth')->group(function () {
 
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/', [AdminController::class, 'index'])->name('dashboard');
+    Route::get('/account', [AccountController::class, 'edit'])->name('account.edit');
+    Route::put('/account/profile', [AccountController::class, 'updateProfile'])->middleware('throttle:6,1')->name('account.profile.update');
+    Route::put('/account/password', [AccountController::class, 'updatePassword'])->middleware('throttle:6,1')->name('account.password.update');
     Route::get('/applicants/export', [ApplicantController::class, 'export'])->name('applicants.export');
     Route::get('/applicants', [ApplicantController::class, 'index'])->name('applicants.index');
     Route::get('/applicants/{applicant}', [ApplicantController::class, 'show'])->whereNumber('applicant')->name('applicants.show');
