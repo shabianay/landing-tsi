@@ -44,15 +44,24 @@
                     <td class="px-5 py-4 text-dark-100 hidden sm:table-cell">{{ $popup->trans('button_text') ?? '—' }}</td>
                     <td class="px-5 py-4 text-center text-dark-100 hidden md:table-cell">{{ $popup->display_delay }}s</td>
                     <td class="px-5 py-4 text-center">
-                        @if($popup->is_active)
-                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-green-50 text-green-700">
-                                <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
-                                {{ __('Aktif') }}
+                        @php $visibility = $popup->visibility(); @endphp
+                        @if ($visibility === 'live')
+                            <span class="inline-flex items-center gap-1.5 bg-green-50 px-2.5 py-1 text-xs font-bold text-green-800">
+                                <span class="h-1.5 w-1.5 bg-green-600"></span>{{ __('Tayang') }}
+                            </span>
+                        @elseif ($visibility === 'scheduled')
+                            <span class="inline-flex flex-col items-center gap-0.5 bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-900">
+                                {{ __('Terjadwal') }}
+                                <span class="font-medium">{{ __('mulai') }} {{ $popup->start_at->format('d M Y H:i') }} WIB</span>
+                            </span>
+                        @elseif ($visibility === 'ended')
+                            <span class="inline-flex flex-col items-center gap-0.5 bg-red-50 px-2.5 py-1 text-xs font-bold text-red-800">
+                                {{ __('Sudah berakhir') }}
+                                <span class="font-medium">{{ $popup->end_at->format('d M Y H:i') }} WIB</span>
                             </span>
                         @else
-                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-dark-50 text-dark-100">
-                                <span class="w-1.5 h-1.5 rounded-full bg-dark-100/30"></span>
-                                {{ __('Nonaktif') }}
+                            <span class="inline-flex items-center gap-1.5 bg-dark-50 px-2.5 py-1 text-xs font-bold text-dark-100">
+                                <span class="h-1.5 w-1.5 bg-dark-100/40"></span>{{ __('Nonaktif') }}
                             </span>
                         @endif
                     </td>

@@ -50,12 +50,12 @@
                 </div>
                 <div class="grid md:grid-cols-2 gap-6">
                     <div>
-                        <label for="start_at" class="block text-sm font-semibold text-dark-300 mb-2">{{ __('Mulai Tampil') }}</label>
+                        <label for="start_at" class="block text-sm font-semibold text-dark-300 mb-2">{{ __('Mulai Tampil') }} <span class="font-normal text-dark-100">(WIB)</span></label>
                         <input type="datetime-local" name="start_at" id="start_at" value="{{ old('start_at', $popup->start_at?->format('Y-m-d\TH:i')) }}" class="w-full px-4 py-3 bg-white border border-dark-100/35 rounded-xl focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 outline-none transition-all font-medium">
                         @error('start_at') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                     </div>
                     <div>
-                        <label for="end_at" class="block text-sm font-semibold text-dark-300 mb-2">{{ __('Selesai Tampil') }}</label>
+                        <label for="end_at" class="block text-sm font-semibold text-dark-300 mb-2">{{ __('Selesai Tampil') }} <span class="font-normal text-dark-100">(WIB, kosongkan agar tanpa batas)</span></label>
                         <input type="datetime-local" name="end_at" id="end_at" value="{{ old('end_at', $popup->end_at?->format('Y-m-d\TH:i')) }}" class="w-full px-4 py-3 bg-white border border-dark-100/35 rounded-xl focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 outline-none transition-all font-medium">
                         @error('end_at') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                     </div>
