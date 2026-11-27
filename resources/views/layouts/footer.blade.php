@@ -17,7 +17,6 @@
             <ul class="mt-4 space-y-1">
                 @foreach ([
                     ['home', __('Beranda')],
-                    ['home', __('Layanan'), '#jasa'],
                     ['portfolio.index', __('Portfolio')],
                     ['articles.index', __('Artikel')],
                     ['jobs.index', __('Karier')],
