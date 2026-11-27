@@ -48,7 +48,7 @@ class FinancialReportController extends Controller
             'maxMonth' => max(1, $months->max('total')),
             'totalRevenue' => $totalRevenue,
             'totalPaid' => $totalPaid,
-            'totalPending' => max(0, $totalRevenue - $totalPaid),
+            'unpaid' => Invoice::unpaidSummary($invoices),
         ]);
     }
 }

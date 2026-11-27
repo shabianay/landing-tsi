@@ -118,12 +118,19 @@ class ProjectManagementTest extends TestCase
         $this->actingAs($this->admin());
         $invoice = Invoice::create(['invoice_number' => 'A1', 'invoice_date' => now()->startOfYear()->addMonths(2), 'client_name' => 'X', 'paid_amount' => 100000]);
         $invoice->items()->create(['item_name' => 'Item', 'item_qty' => 1, 'item_price' => 300000]);
+        $unpaid = Invoice::create(['invoice_number' => 'A2', 'invoice_date' => now()->startOfYear()->addMonths(3), 'client_name' => 'Y', 'paid_amount' => 0]);
+        $unpaid->items()->create(['item_name' => 'Item', 'item_qty' => 1, 'item_price' => 450000]);
 
+        // Billed 750.000, received 100.000; "belum dibayar" counts only A2 (the DP invoice A1 is excluded).
         $this->get(route('admin.financial.index', ['year' => now()->year]))
             ->assertOk()
-            ->assertSee('Rp300.000')
+            ->assertSee('Rp750.000')
             ->assertSee('Rp100.000')
-            ->assertSee('Rp200.000');
+            ->assertSee('Rp450.000')
+            ->assertSee('1 invoice tanpa pembayaran');
+
+        $summary = Invoice::unpaidSummary(Invoice::with('items')->get());
+        $this->assertSame(['total' => 450000.0, 'count' => 1], $summary);
     }
 
     public function test_invoice_settings_are_saved_and_hidden_from_generic_settings(): void
