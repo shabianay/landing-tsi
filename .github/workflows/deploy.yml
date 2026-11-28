@@ -147,6 +147,11 @@ jobs:
           cd "$DEPLOY_PATH"
           PHP="${PHP_BIN:-php}"
 
+          # Which PHP the command line uses here (the web version is set per domain in DirectAdmin).
+          echo "CLI PHP ($PHP): $("$PHP" -r 'echo PHP_VERSION;')"
+          echo "PHP 8.x binaries on this server:"
+          ls -1d /opt/alt/php8*/usr/bin/php /usr/local/php8*/bin/php 2>/dev/null || echo "  (none found in the usual places)"
+
           test -f .env || { echo "::error::.env is missing on the server"; exit 1; }
 
           # Bring the site back up whatever happens after this point.

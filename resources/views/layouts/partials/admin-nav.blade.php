@@ -77,4 +77,6 @@
             Logout
         </button>
     </form>
+    {{-- Admin-only: confirms which PHP the site runs on (set per domain in DirectAdmin). --}}
+    <p class="num px-3 pt-2 text-[11px] text-white/40">PHP {{ PHP_VERSION }} · Laravel {{ app()->version() }}</p>
 </div>
