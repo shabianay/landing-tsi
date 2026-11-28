@@ -60,7 +60,7 @@ class InvoiceSettlementTest extends TestCase
 
         $dp = $dp->fresh('items');
         $this->assertTrue($dp->is_settled);
-        $this->assertSame('Dilunasi', $dp->status_label);
+        $this->assertSame('DP', $dp->status_label, 'the DP invoice keeps reading DP');
         $this->assertSame('partial', $dp->document_status, 'the DP document itself still reads DP');
 
         $this->assertSame(['total' => 2000000.0, 'paid' => 2000000.0, 'unpaid' => ['total' => 0.0, 'count' => 0]], Invoice::summarize(Invoice::query()));
@@ -72,7 +72,7 @@ class InvoiceSettlementTest extends TestCase
         }
         $this->get(route('admin.invoices.edit', $settlement))->assertOk()->assertSee('invoice pelunasan');
         $this->get(route('admin.invoices.edit', $dp))->assertOk()->assertSee('dilunasi');
-        $this->get(route('admin.invoices.index'))->assertOk()->assertSee('Dilunasi')->assertSee('lewat ' . $settlement->invoice_number);
+        $this->get(route('admin.invoices.index'))->assertOk()->assertSee('dilunasi di ' . $settlement->invoice_number)->assertSee('pelunasan ' . $dp->invoice_number);
     }
 
     public function test_pelunasan_can_be_issued_before_the_client_pays(): void
@@ -172,6 +172,47 @@ class InvoiceSettlementTest extends TestCase
         $this->assertEquals(1000000, (float) $later->fresh()->paid_amount);
         $this->assertSame($dp2->id, $made->fresh()->settles_invoice_id, 'button-made pelunasan stays');
         $this->post(route('admin.invoices.settlement.unlink', $made))->assertSessionHasErrors('settlement');
+    }
+
+    public function test_list_shows_full_total_dp_stays_dp_and_pelunasan_is_lunas(): void
+    {
+        // The owner's example: deal 1.000.000, DP 500.000 on 001, the rest on 002.
+        $dp = $this->invoice(1000000, 500000, '2026-10-10');
+        $later = $this->invoice(1000000, 1000000, '2026-10-21');
+        InvoiceSettlement::link($dp, $later);
+
+        $dp = $dp->fresh('items');
+        $later = $later->fresh('items');
+        $this->assertSame(['DP', 1000000.0, 500000.0], [$dp->status_label, $dp->document_total, (float) $dp->paid_amount]);
+        $this->assertSame(['Lunas', 1000000.0, 500000.0], [$later->status_label, $later->document_total, (float) $later->paid_amount]);
+
+        // Filters follow the badges; totals still count the deal once.
+        $this->assertSame([$dp->id], Invoice::query()->paymentStatus('partial')->pluck('id')->all());
+        $this->assertSame([$later->id], Invoice::query()->paymentStatus('paid')->pluck('id')->all());
+        $this->assertSame(1000000.0, Invoice::summarize(Invoice::query())['total']);
+
+        $this->get(route('admin.invoices.index'))->assertOk()
+            ->assertSee('dilunasi di ' . $later->invoice_number)
+            ->assertSee('pelunasan ' . $dp->invoice_number)
+            ->assertDontSee('Dilunasi');
+    }
+
+    public function test_relink_migration_links_the_pairs_that_were_undone(): void
+    {
+        $dp = $this->invoice(1000000, 500000, '2026-10-10');
+        $later = $this->invoice(1000000, 1000000, '2026-10-21');
+        $this->post(route('admin.invoices.pairs.link'), ['pairs' => ["{$dp->id}-{$later->id}"]]);
+        (require database_path('migrations/2026_11_28_180000_unlink_old_dp_pairs.php'))->up();
+        $this->assertNull($later->fresh()->settles_invoice_id);
+
+        (require database_path('migrations/2026_11_28_200000_relink_old_dp_pairs.php'))->up();
+
+        $later = $later->fresh('items');
+        $this->assertSame($dp->id, $later->settles_invoice_id);
+        $this->assertEquals(500000, (float) $later->paid_amount);
+        $this->assertSame('Lunas', $later->status_label);
+        $this->assertSame('DP', $dp->fresh('items')->status_label);
+        $this->assertTrue(InvoiceSettlement::linkedFromOldPair($later), '"Lepas sambungan" stays available');
     }
 
     public function test_existing_pairs_are_previewed_then_linked(): void

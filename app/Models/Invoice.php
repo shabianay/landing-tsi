@@ -242,9 +242,13 @@ class Invoice extends Model
             ->selectRaw(self::totalSql() . ' AS amount_total');
     }
 
+    /** Filter by the status shown in the list (per document, like the badge). */
     public function scopePaymentStatus(Builder $query, string $status): Builder
     {
-        return $query->whereRaw(self::statusSql() . ' = ?', [$status]);
+        $due = self::amountDueSql();
+        $documentStatus = "(CASE WHEN {$due} <= 0 OR invoices.paid_amount >= {$due} THEN 'paid' WHEN invoices.paid_amount > 0 THEN 'partial' ELSE 'unpaid' END)";
+
+        return $query->whereRaw($documentStatus . ' = ?', [$status]);
     }
 
     /**
@@ -363,11 +367,9 @@ class Invoice extends Model
 
     public function getStatusLabelAttribute(): string
     {
-        if ($this->is_settled) {
-            return 'Dilunasi';
-        }
-
-        return match ($this->status) {
+        // Shown per document: a DP invoice stays "DP" after its pelunasan invoice is paid
+        // (the list notes "dilunasi di …"), so DP and pelunasan are easy to tell apart.
+        return match ($this->document_status) {
             'paid' => 'Lunas',
             'partial' => 'DP',
             default => 'Belum Bayar',

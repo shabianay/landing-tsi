@@ -90,9 +90,9 @@
                         <td class="px-4 py-2.5 text-dark-100">{{ $invoice->invoice_date->translatedFormat('d M Y') }}</td>
                         <td class="num px-4 py-2.5"><a href="{{ route('admin.invoices.edit', $invoice) }}" class="font-semibold text-dark-300 hover:underline">{{ $invoice->invoice_number }}</a></td>
                         <td class="px-4 py-2.5 text-dark-200">{{ $invoice->client_name }}</td>
-                        <td class="num px-4 py-2.5 text-right font-semibold">@rp($invoice->total)</td>
+                        <td class="num px-4 py-2.5 text-right font-semibold">@rp($invoice->document_total)</td>
                         <td class="num px-4 py-2.5 text-right">@rp($invoice->paid_amount)</td>
-                        <td class="px-4 py-2.5"><span class="px-2 py-0.5 text-xs font-bold {{ $badge[$invoice->status] }}">{{ $invoice->status_label }}</span></td>
+                        <td class="px-4 py-2.5"><span class="px-2 py-0.5 text-xs font-bold {{ $badge[$invoice->document_status] }}">{{ $invoice->status_label }}</span></td>
                     </tr>
                 @empty
                     <tr><td colspan="6" class="px-4 py-10 text-center text-dark-100">Tidak ada invoice pada periode ini.</td></tr>

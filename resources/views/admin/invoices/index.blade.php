@@ -53,11 +53,11 @@
         <li class="border border-line bg-white p-4" x-data="{ pay: false }">
             <div class="flex items-start justify-between gap-3">
                 <a href="{{ route('admin.invoices.edit', $invoice) }}" class="num min-w-0 font-semibold text-dark-300 [overflow-wrap:anywhere] hover:underline">{{ $invoice->invoice_number }}</a>
-                <span class="shrink-0 px-2 py-0.5 text-xs font-bold {{ $badge[$invoice->status] }}">{{ $invoice->status_label }}</span>@if ($invoice->settledBy)<span class="mt-0.5 block text-xs text-dark-100">lewat {{ $invoice->settledBy->invoice_number }}</span>@elseif ($invoice->settles)<span class="mt-0.5 block text-xs text-dark-100">pelunasan {{ $invoice->settles->invoice_number }}</span>@endif
+                <span class="shrink-0 px-2 py-0.5 text-xs font-bold {{ $badge[$invoice->document_status] }}">{{ $invoice->status_label }}</span>@if ($invoice->settledBy)<span class="mt-0.5 block text-xs text-dark-100">dilunasi di {{ $invoice->settledBy->invoice_number }}</span>@elseif ($invoice->settles)<span class="mt-0.5 block text-xs text-dark-100">pelunasan {{ $invoice->settles->invoice_number }}</span>@endif
             </div>
             <p class="text-sm text-dark-100">{{ $invoice->client_name }} · {{ $invoice->invoice_date->translatedFormat('d M Y') }}</p>
             <dl class="num mt-3 grid grid-cols-2 gap-2 text-sm">
-                <div><dt class="text-xs text-dark-100">Total</dt><dd class="font-semibold text-dark-300">@rp($invoice->amount_due)</dd></div>
+                <div><dt class="text-xs text-dark-100">Total</dt><dd class="font-semibold text-dark-300">@rp($invoice->document_total)</dd></div>
                 <div><dt class="text-xs text-dark-100">Dibayar</dt><dd class="text-dark-200">@rp($invoice->paid_amount)</dd></div>
             </dl>
             <form method="POST" action="{{ route('admin.invoices.payments.store', $invoice) }}" x-show="pay" x-cloak class="mt-3 flex gap-2">
@@ -98,7 +98,7 @@
                     <td class="num px-4 py-3 font-semibold text-dark-300">{{ $invoice->invoice_number }}</td>
                     <td class="px-4 py-3 text-dark-200">{{ $invoice->client_name }}</td>
                     <td class="px-4 py-3 text-dark-100">{{ $invoice->invoice_date->translatedFormat('d M Y') }}</td>
-                    <td class="num px-4 py-3 text-right font-semibold text-dark-300">@rp($invoice->amount_due)</td>
+                    <td class="num px-4 py-3 text-right font-semibold text-dark-300">@rp($invoice->document_total)</td>
                     <td class="num px-4 py-3 text-right text-dark-200">
                         @rp($invoice->paid_amount)
                         <form method="POST" action="{{ route('admin.invoices.payments.store', $invoice) }}" x-show="pay" x-cloak class="mt-2 flex justify-end gap-1">
@@ -109,7 +109,7 @@
                             <button type="submit" class="bg-dark-300 px-2.5 text-xs font-semibold text-white">Simpan</button>
                         </form>
                     </td>
-                    <td class="px-4 py-3"><span class="px-2 py-0.5 text-xs font-bold {{ $badge[$invoice->status] }}">{{ $invoice->status_label }}</span>@if ($invoice->settledBy)<span class="mt-0.5 block text-xs text-dark-100">lewat {{ $invoice->settledBy->invoice_number }}</span>@elseif ($invoice->settles)<span class="mt-0.5 block text-xs text-dark-100">pelunasan {{ $invoice->settles->invoice_number }}</span>@endif</td>
+                    <td class="px-4 py-3"><span class="px-2 py-0.5 text-xs font-bold {{ $badge[$invoice->document_status] }}">{{ $invoice->status_label }}</span>@if ($invoice->settledBy)<span class="mt-0.5 block text-xs text-dark-100">dilunasi di {{ $invoice->settledBy->invoice_number }}</span>@elseif ($invoice->settles)<span class="mt-0.5 block text-xs text-dark-100">pelunasan {{ $invoice->settles->invoice_number }}</span>@endif</td>
                     <td class="px-4 py-3">
                         <div class="flex flex-wrap justify-end gap-x-3 gap-y-1">
                             <a href="{{ route('admin.invoices.pdf', $invoice) }}" target="_blank" rel="noopener" class="font-semibold text-dark-300 hover:underline">PDF</a>
