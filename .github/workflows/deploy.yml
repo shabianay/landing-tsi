@@ -172,6 +172,24 @@ jobs:
           "$PHP" artisan optimize
           "$PHP" artisan queue:restart || true
 
+          # Cron: one `schedule:run` every minute runs everything in routes/console.php
+          # (database:backup 02:00, model:prune 03:00, articles:generate 08:00). The old
+          # direct crons for prune/articles are removed so those tasks do not run twice.
+          # Re-applied on every deploy in case the panel rewrites the crontab.
+          current=$(crontab -l 2>/dev/null || true)
+          site_dir="/$(basename "$DEPLOY_PATH")"   # e.g. /thesolutionid.my.id (other domains never match)
+          wanted=$(printf '%s\n' "$current" \
+            | grep -vF "$site_dir/artisan model:prune" \
+            | grep -vF "$site_dir/artisan articles:generate" || true)
+          grep -q '# tsi-schedule' <<< "$wanted" \
+            || wanted=$(printf '%s\n%s' "$wanted" "* * * * * cd $DEPLOY_PATH && $PHP artisan schedule:run >> /dev/null 2>&1 # tsi-schedule")
+          if [ "$wanted" != "$current" ]; then
+            printf '%s\n' "$wanted" | sed '/^$/d' | crontab -
+            echo "Crontab updated:"; crontab -l | grep -nE "tsi-schedule|$DEPLOY_PATH" || true
+          else
+            echo "Crontab already up to date"
+          fi
+
           REMOTE
 
       # Runs on the server against Apache directly: requests from GitHub's IPs get the
