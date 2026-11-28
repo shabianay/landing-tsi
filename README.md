@@ -15,7 +15,7 @@ A modern landing page website for TSI (PT Teknologi Sistem Integrasi) built with
 
 ## Tech Stack
 
-- **Backend**: Laravel 12, PHP 8.2+
+- **Backend**: Laravel 13, PHP 8.3+ (production runs 8.4)
 - **Frontend**: Tailwind CSS 4, Alpine.js
 - **Build Tool**: Vite 7
 - **Database**: SQLite (default) / MySQL
@@ -23,7 +23,7 @@ A modern landing page website for TSI (PT Teknologi Sistem Integrasi) built with
 
 ## Requirements
 
-- PHP 8.2 or higher
+- PHP 8.3 or higher (8.4 recommended, matching production)
 - Composer
 - Node.js & npm
 - XAMPP / Laravel Herd / Docker (for local development)
@@ -107,3 +107,17 @@ Run `php artisan database:backup --env=local` to create a backup manually. To ru
 ## License
 
 This project is licensed under the MIT License.
+
+### Running locally next to an older PHP (XAMPP)
+
+This project needs PHP 8.3+, while other local projects may still use XAMPP's PHP 8.2.
+On the maintainer's Windows machine PHP 8.4 is installed separately, so `php` stays XAMPP:
+
+```bash
+php84 artisan serve --env=local      # this project
+composer84 install                    # Composer running on PHP 8.4
+php artisan ...                       # other projects keep XAMPP's PHP
+```
+
+`php84` / `composer84` are small shims in `%LOCALAPPDATA%\Microsoft\WindowsApps` pointing to
+`%LOCALAPPDATA%\Programs\php84\php.exe`.
