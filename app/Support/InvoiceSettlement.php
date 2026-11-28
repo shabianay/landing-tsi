@@ -78,13 +78,15 @@ class InvoiceSettlement
             ->reject(fn (Invoice $i) => $i->is_settled);
 
         $used = [];
+        $ignored = self::ignoredKeys();
         $pairs = collect();
         foreach ($invoices->filter(fn (Invoice $i) => $i->status === 'partial') as $dp) {
             if (in_array($dp->id, $used, true)) {
                 continue;
             }
-            $match =$invoices->first(fn (Invoice $later) => ! in_array($later->id, $used, true)
+            $match = $invoices->first(fn (Invoice $later) => ! in_array($later->id, $used, true)
                 && $later->id !== $dp->id
+                && ! in_array("{$dp->id}-{$later->id}", $ignored, true)
                 && self::sameClient($dp, $later)
                 && abs($later->document_total - $dp->document_total) < 0.01
                 && ($later->invoice_date->gt($dp->invoice_date) || ($later->invoice_date->eq($dp->invoice_date) && $later->id > $dp->id))
@@ -141,6 +143,87 @@ class InvoiceSettlement
         });
 
         $dp->order?->syncPaymentDatesFromInvoices();
+    }
+
+    /** Text added to a payment note when link() trimmed it. */
+    private const ADJUSTED_MARK = '(disesuaikan: dikurangi DP ';
+
+    /** Setting holding "dpId-settlementId" keys the admin chose not to link. */
+    private const IGNORED_SETTING = 'invoice_pairs_ignored';
+
+    /** Was this pelunasan invoice made by linking an old pair (rather than with the button)? */
+    public static function linkedFromOldPair(Invoice $settlement): bool
+    {
+        return $settlement->settles_invoice_id !== null
+            && \App\Models\ActivityLog::where('model_type', 'Invoice')
+                ->where('model_id', $settlement->id)
+                ->where('description', 'like', 'Menyambungkan %')
+                ->exists();
+    }
+
+    /**
+     * Undo link(): the two invoices become independent again and the later invoice's
+     * payments are restored to what they were (the DP that was deducted is added back).
+     * The pair is then no longer proposed.
+     */
+    public static function unlink(Invoice $settlement): void
+    {
+        $settlement->load(['payments', 'settles']);
+        $dp = $settlement->settles;
+        $credit = round((float) $settlement->credit_amount, 2);
+
+        \Illuminate\Support\Facades\DB::transaction(function () use ($settlement, $dp, $credit) {
+            $adjusted = $settlement->payments->filter(fn ($p) => str_contains((string) $p->note, self::ADJUSTED_MARK));
+
+            if ($credit > 0) {
+                if ($first = $adjusted->first()) {
+                    $first->amount = round((float) $first->amount + $credit, 2);
+                    $first->save();
+                } else {
+                    // The trimmed payment was removed entirely; put the amount back as one entry.
+                    $settlement->payments()->create([
+                        'amount' => $credit,
+                        'paid_at' => $settlement->invoice_date,
+                        'note' => 'Dikembalikan setelah sambungan DP dilepas.',
+                    ]);
+                }
+            }
+            foreach ($adjusted as $payment) {
+                $note = trim((string) preg_replace('/\s*\(disesuaikan: dikurangi DP [^)]*\)/', '', (string) $payment->note));
+                $payment->note = $note !== '' ? $note : null;
+                $payment->save();
+            }
+
+            $settlement->forceFill(['settles_invoice_id' => null, 'credit_amount' => 0])->save();
+            $settlement->unsetRelation('payments');
+            $settlement->unsetRelation('settles');
+            $settlement->syncPaidAmount();
+
+            if ($dp) {
+                self::ignore($dp->id, $settlement->id);
+            }
+        });
+
+        $dp?->order?->syncPaymentDatesFromInvoices();
+    }
+
+    private static function ignore(int $dpId, int $settlementId): void
+    {
+        $keys = self::ignoredKeys();
+        $keys[] = "{$dpId}-{$settlementId}";
+        \App\Models\Setting::updateOrCreate(
+            ['key' => self::IGNORED_SETTING],
+            ['value' => json_encode(array_values(array_unique($keys))), 'group' => 'invoice', 'label' => 'Pasangan DP-pelunasan yang tidak disambungkan'],
+        );
+    }
+
+    /** @return list<string> */
+    private static function ignoredKeys(): array
+    {
+        $value = \App\Models\Setting::where('key', self::IGNORED_SETTING)->value('value');
+        $keys = is_string($value) ? json_decode($value, true) : null;
+
+        return is_array($keys) ? array_values(array_filter($keys, 'is_string')) : [];
     }
 
     private static function sameClient(Invoice $a, Invoice $b): bool

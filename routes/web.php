@@ -98,7 +98,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/invoices/{invoice}/pdf', [InvoiceController::class, 'pdf'])->whereNumber('invoice')->name('invoices.pdf');
     Route::get('/invoices/pairs', [InvoiceSettlementController::class, 'pairs'])->name('invoices.pairs');
     Route::post('/invoices/pairs', [InvoiceSettlementController::class, 'linkPairs'])->name('invoices.pairs.link');
-    Route::post('/invoices/{invoice}/settlement', [InvoiceSettlementController::class, 'store'])->whereNumber('invoice')->name('invoices.settlement.store');
+    Route::post('/invoices/{invoice}/unlink', [InvoiceSettlementController::class, 'unlink'])->whereNumber('invoice')->name('invoices.settlement.unlink');
+    Route::post('/invoices/{invoice}/settlement',[InvoiceSettlementController::class, 'store'])->whereNumber('invoice')->name('invoices.settlement.store');
     Route::post('/invoices/{invoice}/payments',[InvoicePaymentController::class, 'store'])->whereNumber('invoice')->name('invoices.payments.store');
     Route::delete('/invoices/{invoice}/payments/{payment}', [InvoicePaymentController::class, 'destroy'])->whereNumber(['invoice', 'payment'])->name('invoices.payments.destroy');
     Route::get('/invoices/{invoice}/payments/{payment}/receipt', [InvoicePaymentController::class, 'receipt'])->whereNumber(['invoice', 'payment'])->name('invoices.payments.receipt');

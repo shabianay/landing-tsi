@@ -131,6 +131,49 @@ class InvoiceSettlementTest extends TestCase
         $this->assertSame(today()->toDateString(), $order->fresh()->payment_lunas_date->toDateString());
     }
 
+    public function test_unlinking_an_old_pair_restores_the_original_data(): void
+    {
+        $dp = $this->invoice(1000000, 500000, '2025-08-08');
+        $later = $this->invoice(1000000, 1000000, '2025-08-20');
+        $originalNote = $later->payments()->first()->note;
+        $before = Invoice::summarize(Invoice::query());
+
+        $this->post(route('admin.invoices.pairs.link'), ['pairs' => ["{$dp->id}-{$later->id}"]]);
+        $this->assertEquals(500000, (float) $later->fresh()->paid_amount);
+
+        $this->get(route('admin.invoices.edit', $later))->assertSee('Lepas sambungan');
+        $this->post(route('admin.invoices.settlement.unlink', $later))->assertSessionHasNoErrors();
+
+        $later = $later->fresh(['items', 'payments']);
+        $this->assertNull($later->settles_invoice_id);
+        $this->assertEquals(0, (float) $later->credit_amount);
+        $this->assertEquals(1000000, (float) $later->paid_amount);
+        $this->assertCount(1, $later->payments);
+        $this->assertEquals(1000000, (float) $later->payments->first()->amount);
+        $this->assertSame($originalNote, $later->payments->first()->note);
+        $this->assertFalse($dp->fresh()->is_settled);
+        $this->assertSame($before, Invoice::summarize(Invoice::query()));
+        // The pair the admin undid is not proposed again.
+        $this->assertCount(0, InvoiceSettlement::candidatePairs());
+    }
+
+    public function test_revert_migration_only_touches_pairs_linked_from_the_pairs_page(): void
+    {
+        $dp = $this->invoice(1000000, 500000, '2025-08-08');
+        $later = $this->invoice(1000000, 1000000, '2025-08-20');
+        $this->post(route('admin.invoices.pairs.link'), ['pairs' => ["{$dp->id}-{$later->id}"]]);
+
+        $dp2 = $this->invoice(2000000, 1000000, '2026-10-01');
+        $made = InvoiceSettlement::create($dp2, today(), 1000000);
+
+        (require database_path('migrations/2026_11_28_180000_unlink_old_dp_pairs.php'))->up();
+
+        $this->assertNull($later->fresh()->settles_invoice_id);
+        $this->assertEquals(1000000, (float) $later->fresh()->paid_amount);
+        $this->assertSame($dp2->id, $made->fresh()->settles_invoice_id, 'button-made pelunasan stays');
+        $this->post(route('admin.invoices.settlement.unlink', $made))->assertSessionHasErrors('settlement');
+    }
+
     public function test_existing_pairs_are_previewed_then_linked(): void
     {
         // A deal of 1.000.000: DP 500.000, then a second invoice that recorded the full price as paid.
