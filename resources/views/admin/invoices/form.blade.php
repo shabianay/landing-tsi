@@ -92,6 +92,11 @@
 
         <section class="border border-line bg-white">
             <h2 class="border-b border-line px-5 py-4 font-bold text-dark-300 sm:px-8">Item tagihan</h2>
+            @if ($editing && $invoice->settledBy)
+                <p class="border-b border-line bg-amber-50 px-5 py-3 text-sm text-dark-300 sm:px-8">
+                    Item, diskon, dan PPN dikunci karena invoice ini sudah dilunasi lewat <strong class="num">{{ $invoice->settledBy->invoice_number }}</strong>. Tanggal dan catatan tetap bisa diubah.
+                </p>
+            @endif
             <div class="divide-y divide-line">
                 <template x-for="(item, index) in items" :key="index">
                     <div class="grid grid-cols-12 gap-3 px-5 py-4 sm:px-8">

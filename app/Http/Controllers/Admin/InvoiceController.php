@@ -131,6 +131,7 @@ class InvoiceController extends Controller
     public function update(Request $request, Invoice $invoice): RedirectResponse
     {
         $data = $this->validated($request, $invoice);
+        $this->guardSettledAmounts($invoice, $data);
         $attributes = $this->invoiceAttributes($data, $this->rateFor($invoice));
         $previousOrder = $invoice->order;
 
@@ -153,6 +154,11 @@ class InvoiceController extends Controller
 
     public function destroy(Invoice $invoice): RedirectResponse
     {
+        // The pelunasan invoice deducts this DP; deleting it would drop the DP from the books.
+        if ($settledBy = $invoice->settledBy) {
+            return back()->withErrors(['invoice' => "Invoice {$invoice->invoice_number} sudah dilunasi lewat {$settledBy->invoice_number}. Hapus invoice pelunasan itu dulu bila invoice ini memang salah."]);
+        }
+
         $order = $invoice->order;
         ActivityLog::record('deleted', $invoice, "Menghapus invoice {$invoice->invoice_number}");
         $invoice->delete();
@@ -276,6 +282,33 @@ class InvoiceController extends Controller
         }
 
         return 'data:' . $mime . ';base64,' . base64_encode(Storage::disk('public')->get($path));
+    }
+
+    /**
+     * A DP invoice closed by a pelunasan invoice must keep its client and amounts: the
+     * pelunasan invoice repeats those items and deducts this DP. Date and notes may change.
+     */
+    private function guardSettledAmounts(Invoice $invoice, array $data): void
+    {
+        $settledBy = $invoice->settledBy;
+        if (! $settledBy) {
+            return;
+        }
+
+        $invoice->loadMissing('items');
+        $current = $invoice->items->map(fn ($i) => [trim($i->item_name), (int) $i->item_qty, (int) round((float) $i->item_price)])->values()->all();
+        $submitted = collect($data['items'])->map(fn ($i) => [trim((string) $i['name']), (int) $i["qty"], (int) round((float) $i["price"])])->values()->all();
+        $discount = $data['discount_type'] === 'percent' ? min((float) ($data['discount_amount'] ?? 0), 100) : (float) ($data['discount_amount'] ?? 0);
+
+        $changed = $current !== $submitted
+            || (int) $data['order_client_id'] !== (int) $invoice->order_client_id
+            || $data['discount_type'] !== $invoice->discount_type
+            || abs($discount - (float) $invoice->discount_amount) > 0.005
+            || ! empty($data['use_ppn']) !== ((float) $invoice->ppn_amount > 0);
+
+        if ($changed) {
+            throw ValidationException::withMessages(['items' => "Invoice ini sudah dilunasi lewat {$settledBy->invoice_number}, jadi klien, item, diskon, dan PPN-nya dikunci. Tanggal dan catatan tetap bisa diubah. Hapus invoice pelunasan dulu bila harganya memang salah."]);
+        }
     }
 
     /** Keep the rate an invoice was issued with; invoices without PPN use the current setting. */
