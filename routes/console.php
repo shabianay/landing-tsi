@@ -29,9 +29,9 @@ Schedule::command('articles:generate')
     ->withoutOverlapping()
     ->appendOutputTo(storage_path('logs/article-bot.log'));
 
-Schedule::command('database:backup')
-    ->dailyAt('02:00')
-    ->withoutOverlapping();
+// The daily 02:00 database backup is not scheduled here: the host disables proc_open,
+// so `database:backup` cannot run mysqldump in production. A server cron runs
+// scripts/backup-database.sh instead. Use `php artisan database:backup` locally.
 
 Schedule::command('model:prune', ['--model' => [\App\Models\PageView::class]])
     ->dailyAt('03:00')
