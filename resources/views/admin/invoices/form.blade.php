@@ -37,7 +37,8 @@
           get subtotal() { return this.items.reduce((s, i) => s + (Number(i.qty) || 0) * (Number(i.price) || 0), 0); },
           get discountValue() { const d = Number(this.discount) || 0; return this.discountType === 'percent' ? this.subtotal * Math.min(d, 100) / 100 : d; },
           get ppnValue() { return this.ppn ? Math.max(0, this.subtotal - this.discountValue) * this.ppnRate / 100 : 0; },
-          get total() { return Math.max(0, this.subtotal - this.discountValue) + this.ppnValue; },
+          credit: @js((float) ($invoice->credit_amount ?? 0)),
+          get total() { return Math.max(0, Math.max(0, this.subtotal - this.discountValue) + this.ppnValue - this.credit); },
           get status() { if (this.subtotal <= 0) return '—'; if (this.total <= 0 || this.paid >= this.total) return 'Lunas'; return this.paid > 0 ? 'DP' : 'Belum Bayar'; },
       }"
       class="grid gap-6 xl:grid-cols-12">
@@ -173,6 +174,9 @@
                 <div class="flex justify-between"><dt class="text-dark-100">Subtotal</dt><dd x-text="rp(subtotal)"></dd></div>
                 <div class="flex justify-between"><dt class="text-dark-100">Diskon</dt><dd x-text="'−' + rp(discountValue)"></dd></div>
                 <div class="flex justify-between"><dt class="text-dark-100">PPN (dari harga setelah diskon)</dt><dd x-text="rp(ppnValue)"></dd></div>
+                @if ((float) $invoice->credit_amount > 0)
+                    <div class="flex justify-between"><dt class="text-dark-100">DP{{ $invoice->settles ? ' (' . $invoice->settles->invoice_number . ')' : '' }}</dt><dd x-text="'−' + rp(credit)"></dd></div>
+                @endif
                 <div class="flex items-baseline justify-between border-t border-line pt-3 text-base"><dt class="font-bold text-dark-300">Total</dt><dd class="font-display text-2xl font-extrabold text-dark-300" x-text="rp(total)"></dd></div>
                 <div class="flex justify-between"><dt class="text-dark-100">Status</dt><dd class="font-semibold text-dark-300" x-text="status"></dd></div>
             </dl>

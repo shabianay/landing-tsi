@@ -20,7 +20,10 @@ class InvoicePaymentController extends Controller
 {
     public function store(Request $request, Invoice $invoice): RedirectResponse
     {
-        $invoice->load('items');
+        $invoice->load(['items', 'settledBy']);
+        if ($invoice->settledBy) {
+            return back()->withErrors(['amount' => "Invoice {$invoice->invoice_number} sudah dilunasi lewat {$invoice->settledBy->invoice_number}. Catat pembayaran di invoice itu."]);
+        }
         $remaining = round($invoice->remaining, 2);
         if ($remaining <= 0) {
             return back()->withErrors(['amount' => "Invoice {$invoice->invoice_number} sudah lunas."]);
@@ -50,6 +53,10 @@ class InvoicePaymentController extends Controller
     public function destroy(Invoice $invoice, InvoicePayment $payment): RedirectResponse
     {
         abort_unless($payment->invoice_id === $invoice->id, 404);
+        // The DP on a settled invoice is deducted on its pelunasan invoice; keep them consistent.
+        if ($settledBy = $invoice->settledBy) {
+            return back()->withErrors(['amount' => "Pembayaran ini sudah dipotongkan di invoice pelunasan {$settledBy->invoice_number}. Hapus invoice pelunasan itu dulu bila DP-nya salah."]);
+        }
 
         DB::transaction(function () use ($invoice, $payment) {
             $payment->delete();
@@ -78,7 +85,7 @@ class InvoicePaymentController extends Controller
             'settings' => $invoices->pdfSettings(),
             'logo' => $invoices->pdfLogo(),
             'words' => Terbilang::rupiah($payment->amount),
-            'remainingAfter' => max(0, $invoice->total - $paidUpTo),
+            'remainingAfter' => max(0, $invoice->amount_due - $paidUpTo),
         ])->setPaper('a5', 'landscape');
 
         $filename = 'kwitansi-' . str_replace('/', '-', $payment->receipt_number) . '.pdf';

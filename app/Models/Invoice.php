@@ -18,6 +18,7 @@ class Invoice extends Model
     protected $fillable = [
         'order_client_id', 'order_id', 'invoice_number', 'invoice_date', 'client_name', 'client_address',
         'notes', 'paid_amount', 'ppn_rate', 'ppn_amount', 'discount_amount', 'discount_type',
+        'settles_invoice_id', 'credit_amount',
     ];
 
     protected function casts(): array
@@ -28,6 +29,7 @@ class Invoice extends Model
             'ppn_rate' => 'decimal:2',
             'ppn_amount' => 'decimal:2',
             'discount_amount' => 'decimal:2',
+            'credit_amount' => 'decimal:2',
         ];
     }
 
@@ -45,6 +47,18 @@ class Invoice extends Model
     public function order(): BelongsTo
     {
         return $this->belongsTo(Order::class);
+    }
+
+    /** For a pelunasan invoice: the DP invoice it settles. */
+    public function settles(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'settles_invoice_id');
+    }
+
+    /** For a DP invoice: the pelunasan invoice that closed it. */
+    public function settledBy(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(self::class, 'settles_invoice_id');
     }
 
     public function payments(): HasMany
@@ -148,6 +162,27 @@ class Invoice extends Model
         return $prefix . str_pad((string) ($last + 1), 3, '0', STR_PAD_LEFT);
     }
 
+    /**
+     * Create an invoice inside a transaction. Without a manual number, the number comes
+     * from the invoice date; if two invoices grab the same number at once, the unique
+     * index rejects one and the next number is tried.
+     *
+     * @param  callable(string $number): self  $create
+     */
+    public static function createNumbered(\DateTimeInterface $date, ?string $manualNumber, callable $create): self
+    {
+        for ($attempt = 1; ; $attempt++) {
+            $number = $manualNumber ?: static::nextNumber($date);
+            try {
+                return \Illuminate\Support\Facades\DB::transaction(fn () => $create($number));
+            } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
+                if ($manualNumber || $attempt >= 3) {
+                    throw \Illuminate\Validation\ValidationException::withMessages(['invoice_number' => "Nomor invoice {$number} sudah dipakai. Simpan ulang untuk memakai nomor berikutnya."]);
+                }
+            }
+        }
+    }
+
     // --- SQL versions of the amounts, so lists and totals do not load every invoice ---
 
     private static function subtotalSql(): string
@@ -155,12 +190,28 @@ class Invoice extends Model
         return '(SELECT COALESCE(SUM(invoice_items.item_qty * invoice_items.item_price), 0) FROM invoice_items WHERE invoice_items.invoice_id = invoices.id)';
     }
 
-    public static function totalSql(): string
+    /** True when a pelunasan invoice has closed this (DP) invoice. */
+    private static function settledSql(): string
+    {
+        return '(EXISTS (SELECT 1 FROM invoices AS settlement WHERE settlement.settles_invoice_id = invoices.id))';
+    }
+
+    /** What this document asks for: items + PPN − discount − DP already paid on an earlier invoice. */
+    private static function amountDueSql(): string
     {
         $s = self::subtotalSql();
-        $raw = "({$s} + invoices.ppn_amount - (CASE WHEN invoices.discount_type = 'percent' THEN {$s} * invoices.discount_amount / 100 ELSE invoices.discount_amount END))";
+        $raw = "({$s} + invoices.ppn_amount - (CASE WHEN invoices.discount_type = 'percent' THEN {$s} * invoices.discount_amount / 100 ELSE invoices.discount_amount END) - invoices.credit_amount)";
 
         return "(CASE WHEN {$raw} < 0 THEN 0 ELSE {$raw} END)";
+    }
+
+    /**
+     * Amount billed for bookkeeping. A DP invoice closed by a pelunasan invoice counts
+     * only what was paid on it; the rest is billed (once) by the pelunasan invoice.
+     */
+    public static function totalSql(): string
+    {
+        return '(CASE WHEN ' . self::settledSql() . ' THEN invoices.paid_amount ELSE ' . self::amountDueSql() . ' END)';
     }
 
     /** Money received, never more than the invoice total. */
@@ -186,6 +237,8 @@ class Invoice extends Model
         }
 
         return $query->selectRaw(self::subtotalSql() . ' AS amount_subtotal')
+            ->selectRaw(self::amountDueSql() . ' AS amount_due_sql')
+            ->selectRaw(self::settledSql() . ' AS is_settled')
             ->selectRaw(self::totalSql() . ' AS amount_total');
     }
 
@@ -237,13 +290,52 @@ class Invoice extends Model
         return $this->discount_type === 'percent' ? $this->subtotal * ($discount / 100) : $discount;
     }
 
+    /** Items + PPN − discount, before any DP credit (the "SUB TOTAL … DISKON" part of the PDF). */
+    public function getDocumentTotalAttribute(): float
+    {
+        return max(0, $this->subtotal + (float) $this->ppn_amount - $this->calculated_discount_value);
+    }
+
+    /** What this document asks the client to pay (the PDF's TOTAL line). */
+    public function getAmountDueAttribute(): float
+    {
+        if (! $this->relationLoaded('items') && array_key_exists('amount_due_sql', $this->attributes)) {
+            return (float) $this->attributes['amount_due_sql'];
+        }
+
+        return max(0, $this->document_total - (float) $this->credit_amount);
+    }
+
+    /** Closed by a pelunasan invoice (see settledBy). */
+    public function getIsSettledAttribute(): bool
+    {
+        if ($this->relationLoaded('settledBy')) {
+            return $this->settledBy !== null;
+        }
+        if (array_key_exists('is_settled', $this->attributes)) {
+            return (bool) $this->attributes['is_settled'];
+        }
+
+        return $this->exists && static::where('settles_invoice_id', $this->id)->exists();
+    }
+
+    /** Amount billed for bookkeeping; a settled DP invoice counts only what was paid on it. */
     public function getTotalAttribute(): float
     {
         if (! $this->relationLoaded('items') && array_key_exists('amount_total', $this->attributes)) {
             return (float) $this->attributes['amount_total'];
         }
 
-        return max(0, $this->subtotal + (float) $this->ppn_amount - $this->calculated_discount_value);
+        return $this->is_settled ? (float) $this->paid_amount : $this->amount_due;
+    }
+
+    /** PDF badge: this document on its own (a settled DP invoice still reads "DP"). */
+    public function getDocumentStatusAttribute(): string
+    {
+        $due = $this->amount_due;
+        $paid = (float) $this->paid_amount;
+
+        return $due <= 0 || $paid >= $due ? 'paid' : ($paid > 0 ? 'partial' : 'unpaid');
     }
 
     /** Money received, capped at the total (an overpayment is not counted twice). */
@@ -271,6 +363,10 @@ class Invoice extends Model
 
     public function getStatusLabelAttribute(): string
     {
+        if ($this->is_settled) {
+            return 'Dilunasi';
+        }
+
         return match ($this->status) {
             'paid' => 'Lunas',
             'partial' => 'DP',
