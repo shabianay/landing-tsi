@@ -116,8 +116,8 @@
                 @foreach ($order->invoices as $invoice)
                     <li class="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 px-5 py-3 sm:px-8">
                         <a href="{{ route('admin.invoices.edit', $invoice) }}" class="num font-semibold text-dark-300 [overflow-wrap:anywhere] hover:underline">{{ $invoice->invoice_number }}</a>
-                        <span class="num text-sm text-dark-100">@rp($invoice->paid_amount) / @rp($invoice->total)</span>
-                        <span class="px-2 py-0.5 text-xs font-bold {{ $invoiceBadge[$invoice->status] }}">{{ $invoice->status_label }}</span>
+                        <span class="num text-sm text-dark-100">@rp($invoice->paid_amount) / @rp($invoice->document_total)</span>
+                        <span class="px-2 py-0.5 text-xs font-bold {{ $invoiceBadge[$invoice->document_status] }}">{{ $invoice->status_label }}</span>
                     </li>
                 @endforeach
             </ul>
