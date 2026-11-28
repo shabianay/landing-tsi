@@ -24,7 +24,7 @@ jobs:
 
       - uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.2'
+          php-version: '8.4'
           extensions: mbstring, pdo_sqlite, gd, intl, bcmath
           coverage: none
 
@@ -54,36 +54,6 @@ jobs:
           composer audit
           npm audit --audit-level=high
 
-  # Readiness check for moving the server to PHP 8.4 (8.2 security support ends 31 Dec 2026).
-  test-php84:
-    name: Tests on PHP 8.4
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.4'
-          extensions: mbstring, pdo_sqlite, gd, intl, bcmath
-          coverage: none
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: npm
-
-      - name: Install dependencies & build assets
-        run: |
-          composer install --no-interaction --prefer-dist --no-progress
-          npm ci
-          npm run build
-
-      - name: Run tests
-        run: |
-          cp .env.example .env
-          php artisan key:generate
-          php artisan test
-
   deploy:
     name: Deploy to production
     needs: test
@@ -100,7 +70,7 @@ jobs:
 
       - uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.2'
+          php-version: '8.4'
           extensions: mbstring, gd, intl, bcmath
           coverage: none
 
@@ -142,7 +112,7 @@ jobs:
 
       - name: Activate release
         run: |
-          ssh production "DEPLOY_PATH='$DEPLOY_PATH' bash -s" <<'REMOTE'
+          ssh production "DEPLOY_PATH='$DEPLOY_PATH' SSH_HOST='$SSH_HOST' bash -s" <<'REMOTE'
           set -euo pipefail
           cd "$DEPLOY_PATH"
           PHP="${PHP_BIN:-php}"
@@ -151,6 +121,18 @@ jobs:
           echo "CLI PHP ($PHP): $("$PHP" -r 'echo PHP_VERSION;')"
           echo "PHP 8.x binaries on this server:"
           ls -1d /opt/alt/php8*/usr/bin/php /usr/local/php8*/bin/php 2>/dev/null || echo "  (none found in the usual places)"
+
+          # Laravel 13 needs PHP 8.3+, both on the command line and for the website itself
+          # (set per domain in DirectAdmin). Stop before touching anything if either is older.
+          "$PHP" -r 'exit(version_compare(PHP_VERSION, "8.3.0", ">=") ? 0 : 1);' \
+            || { echo "::error::Command-line PHP is older than 8.3; set PHP_BIN or the account PHP version"; exit 1; }
+          probe="public_html/php-version-$(head -c 12 /dev/urandom | od -An -tx1 | tr -d ' \n').php"
+          printf '<?php echo PHP_VERSION;' > "$probe"
+          web_php=$(curl -sk -m 20 --resolve "thesolutionid.my.id:443:${SSH_HOST}" "https://thesolutionid.my.id/${probe#public_html/}" || true)
+          rm -f "$probe"
+          echo "Web PHP: ${web_php:-unknown}"
+          "$PHP" -r 'exit(preg_match("/^\d+\.\d+\.\d+/", $argv[1]) && version_compare($argv[1], "8.3.0", ">=") ? 0 : 1);' "$web_php" \
+            || { echo "::error::The website runs PHP '${web_php}'; set thesolutionid.my.id to PHP 8.4 in DirectAdmin (Per Domain Settings)"; exit 1; }
 
           test -f .env || { echo "::error::.env is missing on the server"; exit 1; }
 
