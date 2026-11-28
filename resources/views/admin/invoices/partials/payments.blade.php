@@ -1,9 +1,53 @@
-{{-- Edit page, below the invoice form: payment history + sending the invoice to the client. --}}
+{{-- Edit page, below the invoice form: DP/pelunasan link, payment history, sending to the client. --}}
+@if ($invoice->settles)
+    <p class="mt-6 border border-primary-300 bg-primary-50 px-5 py-3.5 text-sm text-dark-300">
+        Ini <strong>invoice pelunasan</strong> untuk <a href="{{ route('admin.invoices.edit', $invoice->settles) }}" class="num font-semibold underline">{{ $invoice->settles->invoice_number }}</a>:
+        DP <span class="num">@rp($invoice->credit_amount)</span> sudah dipotong, jadi yang ditagih <span class="num font-semibold">@rp($invoice->amount_due)</span>.
+    </p>
+@elseif ($invoice->settledBy)
+    <p class="mt-6 border border-emerald-300 bg-emerald-50 px-5 py-3.5 text-sm text-dark-300">
+        DP ini sudah <strong>dilunasi</strong> lewat invoice <a href="{{ route('admin.invoices.edit', $invoice->settledBy) }}" class="num font-semibold underline">{{ $invoice->settledBy->invoice_number }}</a>. Di laporan, deal ini dihitung sekali.
+    </p>
+@elseif (\App\Support\InvoiceSettlement::canSettle($invoice))
+    <form method="POST" action="{{ route('admin.invoices.settlement.store', $invoice) }}" class="mt-6 grid gap-3 border border-dark-300 bg-white p-5 sm:grid-cols-12 sm:items-end sm:p-8">
+        @csrf
+        <div class="sm:col-span-12">
+            <h2 class="font-bold text-dark-300">Buat invoice pelunasan</h2>
+            <p class="mt-1 text-sm text-dark-100">Nomor baru dengan item yang sama. DP <span class="num">@rp($invoice->paid_amount)</span> dipotong, sisa yang ditagih <span class="num font-semibold text-dark-300">@rp($invoice->remaining)</span>. Invoice ini lalu ditandai dilunasi.</p>
+        </div>
+        <div class="sm:col-span-3">
+            <label for="settle-date" class="field-label">Tanggal invoice</label>
+            <input id="settle-date" type="date" name="invoice_date" value="{{ old('invoice_date', today()->format('Y-m-d')) }}" required class="field">
+        </div>
+        <div class="sm:col-span-4">
+            <label for="settle-paid" class="field-label">Sudah dibayar sekarang (Rp)</label>
+            <input id="settle-paid" type="number" name="paid_now" min="0" max="{{ $invoice->remaining }}" step="any" value="{{ old('paid_now', (float) $invoice->remaining) }}" class="field num">
+        </div>
+        <div class="sm:col-span-2">
+            <label for="settle-method" class="field-label">Metode</label>
+            <select id="settle-method" name="method" class="field">
+                <option value="">—</option>
+                @foreach (\App\Models\Order::PAYMENT_METHODS as $method)
+                    <option value="{{ $method }}">{{ $method }}</option>
+                @endforeach
+            </select>
+        </div>
+        <div class="sm:col-span-3">
+            <button type="submit" class="btn-primary w-full">Buat pelunasan</button>
+        </div>
+        <p class="field-hint sm:col-span-12">Isi 0 bila klien belum membayar; pembayarannya bisa dicatat nanti di invoice pelunasan.</p>
+    </form>
+@endif
+
 <div class="mt-6 grid gap-6 xl:grid-cols-12 xl:items-start">
     <section id="pembayaran" class="scroll-mt-6 border border-line bg-white xl:col-span-8" aria-labelledby="pembayaran-title">
         <header class="flex flex-wrap items-baseline justify-between gap-2 border-b border-line px-5 py-4 sm:px-8">
             <h2 id="pembayaran-title" class="font-bold text-dark-300">Riwayat pembayaran</h2>
-            <p class="num text-sm text-dark-100">Dibayar <strong class="text-dark-300">@rp($invoice->paid_amount)</strong> dari @rp($invoice->total) · sisa <strong class="text-dark-300">@rp($invoice->remaining)</strong></p>
+            @if ($invoice->settledBy)
+                <p class="num text-sm text-dark-100">DP <strong class="text-dark-300">@rp($invoice->paid_amount)</strong> · sisanya ditagih di {{ $invoice->settledBy->invoice_number }}</p>
+            @else
+                <p class="num text-sm text-dark-100">Dibayar <strong class="text-dark-300">@rp($invoice->paid_amount)</strong> dari @rp($invoice->amount_due) · sisa <strong class="text-dark-300">@rp($invoice->remaining)</strong></p>
+            @endif
         </header>
 
         @if ($invoice->payments->isEmpty())

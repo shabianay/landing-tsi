@@ -52,9 +52,13 @@ class InvoiceController extends Controller
         }
 
         return view('admin.invoices.index', [
-            'invoices' => (clone $query)->withAmounts()->orderByDesc('invoice_date')->orderByDesc('id')->paginate(15)->withQueryString(),
+            'invoices' => (clone $query)->withAmounts()
+                ->with(['settles:id,invoice_number', 'settledBy:id,invoice_number,settles_invoice_id'])
+                ->orderByDesc('invoice_date')->orderByDesc('id')->paginate(15)->withQueryString(),
             'filters' => $filters,
             'totals' => Invoice::summarize($query),
+            // Old DP + pelunasan pairs not linked yet (the link disappears once none are left).
+            'pairCount' => \App\Support\InvoiceSettlement::candidatePairs()->count(),
         ]);
     }
 
@@ -85,35 +89,23 @@ class InvoiceController extends Controller
         $attributes = $this->invoiceAttributes($data, Invoice::ppnRate());
         $manualNumber = $data['invoice_number'] ?? null;
 
-        // An empty number is generated from the invoice date. If two invoices are saved at the
-        // same moment and get the same number, the unique index rejects one: try the next number.
-        $invoice = null;
-        for ($attempt = 1; $invoice === null; $attempt++) {
-            $number = $manualNumber ?: Invoice::nextNumber(\Illuminate\Support\Carbon::parse($data['invoice_date']));
-            try {
-                $invoice = DB::transaction(function () use ($attributes, $number, $data) {
-                    $invoice = Invoice::create(['paid_amount' => 0] + $attributes + ['invoice_number' => $number]);
-                    $this->syncItems($invoice, $data);
+        $invoice = Invoice::createNumbered(\Illuminate\Support\Carbon::parse($data['invoice_date']), $manualNumber, function (string $number) use ($attributes, $data) {
+            $invoice = Invoice::create(['paid_amount' => 0] + $attributes + ['invoice_number' => $number]);
+            $this->syncItems($invoice, $data);
 
-                    // A payment already received (e.g. the DP) becomes the first history entry.
-                    if ((float) ($data['paid_amount'] ?? 0) > 0) {
-                        $invoice->payments()->create([
-                            'amount' => $data['paid_amount'],
-                            'paid_at' => $data['invoice_date'],
-                            'method' => $data['payment_method'] ?? null,
-                            'note' => 'Dicatat saat invoice dibuat.',
-                        ]);
-                    }
-                    $invoice->syncPaidAmount();
-
-                    return $invoice;
-                });
-            } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
-                if ($manualNumber || $attempt >= 3) {
-                    throw ValidationException::withMessages(['invoice_number' => "Nomor invoice {$number} sudah dipakai. Simpan ulang untuk memakai nomor berikutnya."]);
-                }
+            // A payment already received (e.g. the DP) becomes the first history entry.
+            if ((float) ($data['paid_amount'] ?? 0) > 0) {
+                $invoice->payments()->create([
+                    'amount' => $data['paid_amount'],
+                    'paid_at' => $data['invoice_date'],
+                    'method' => $data['payment_method'] ?? null,
+                    'note' => 'Dicatat saat invoice dibuat.',
+                ]);
             }
-        }
+            $invoice->syncPaidAmount();
+
+            return $invoice;
+        });
 
         ActivityLog::record('created', $invoice, "Membuat invoice {$invoice->invoice_number}");
 
@@ -124,7 +116,7 @@ class InvoiceController extends Controller
 
     public function edit(Invoice $invoice): View
     {
-        $invoice->load(['items', 'payments', 'client', 'order']);
+        $invoice->load(['items', 'payments', 'client', 'order', 'settles', 'settledBy']);
 
         return view('admin.invoices.form', [
             'invoice' => $invoice,
@@ -183,7 +175,7 @@ class InvoiceController extends Controller
     /** The invoice PDF as bytes (admin view, public link and email attachment share it). */
     public function renderPdf(Invoice $invoice): string
     {
-        $invoice->loadMissing('items');
+        $invoice->loadMissing(['items', 'settles', 'settledBy']);
 
         return Pdf::loadView('admin.invoices.pdf', [
             'invoice' => $invoice,
@@ -305,6 +297,9 @@ class InvoiceController extends Controller
         if ($amounts['subtotal'] > $max || $amounts['total'] > $max) {
             throw ValidationException::withMessages(['items' => 'Total invoice terlalu besar (maksimal Rp' . number_format($max, 0, ',', '.') . ').']);
         }
+        // A pelunasan invoice asks only for what is left after the DP.
+        $amounts['total'] = max(0, $amounts['total'] - (float) ($invoice?->credit_amount ?? 0));
+
         // New invoice: the first payment typed in the form. Existing invoice: the payment history.
         $paid = $invoice ? (float) $invoice->paid_amount : (float) ($data['paid_amount'] ?? 0);
         if ($paid > $amounts['total'] + 0.005) {

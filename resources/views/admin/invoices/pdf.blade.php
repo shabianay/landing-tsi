@@ -6,7 +6,7 @@
     @php
         // Mirrors the studio's own invoice design (archive in "THE SOLUTION ID/Invoice").
         $rp = fn ($n) => 'Rp. ' . number_format((float) $n, 0, ',', '.');
-        $badge = ['paid' => 'PAID', 'partial' => 'DP', 'unpaid' => 'UNPAID'][$invoice->status];
+        $badge = ['paid' => 'PAID', 'partial' => 'DP', 'unpaid' => 'UNPAID'][$invoice->document_status];
     @endphp
     <style>
         @page { margin: 0; }
@@ -47,6 +47,11 @@
             <td style="width: 45%; text-align: right;">
                 <div class="title">INVOICE</div>
                 <span class="badge">{{ $badge }}</span>
+                @if ($invoice->settles)
+                    <div class="muted" style="margin-top: 8px; font-size: 9.5px;">Pelunasan untuk invoice {{ $invoice->settles->invoice_number }}</div>
+                @elseif ($invoice->settledBy)
+                    <div class="muted" style="margin-top: 8px; font-size: 9.5px;">Dilunasi lewat invoice {{ $invoice->settledBy->invoice_number }}</div>
+                @endif
             </td>
         </tr>
     </table>
@@ -112,7 +117,7 @@
                     <div class="label" style="font-size: 10.5px;">Metode Pembayaran</div>
                     <div class="muted">{!! nl2br(e($settings['invoice_payment_info'])) !!}</div>
                 @endif
-                @if ($settings['invoice_payment_note'] && $invoice->status !== 'paid')
+                @if ($settings["invoice_payment_note"] && $invoice->document_status !== "paid")
                     <div class="muted" style="margin-top: 8px; text-align: justify;">{{ $settings['invoice_payment_note'] }}</div>
                 @endif
                 @if ($invoice->notes)
@@ -124,18 +129,21 @@
                     <tr><td class="k">Sub Total</td><td class="colon">:</td><td class="v muted">{{ $rp($invoice->subtotal) }}</td></tr>
                     <tr><td class="k">Diskon{{ $invoice->discount_type === 'percent' && (float) $invoice->discount_amount > 0 ? ' ' . rtrim(rtrim(number_format((float) $invoice->discount_amount, 2, ',', '.'), '0'), ',') . '%' : '' }}</td><td class="colon">:</td><td class="v muted">{{ $invoice->calculated_discount_value > 0 ? '- ' . $rp($invoice->calculated_discount_value) : '-' }}</td></tr>
                     <tr><td class="k">PPN {{ $invoice->ppn_rate_label }}%</td><td class="colon">:</td><td class="v muted">{{ (float) $invoice->ppn_amount > 0 ? $rp($invoice->ppn_amount) : '-' }}</td></tr>
+                    @if ((float) $invoice->credit_amount > 0)
+                        <tr><td class="k">DP{{ $invoice->settles ? ' (' . $invoice->settles->invoice_number . ')' : '' }}</td><td class="colon">:</td><td class="v muted">- {{ $rp($invoice->credit_amount) }}</td></tr>
+                    @endif
                 </table>
                 <table class="total" style="margin-top: 14px;">
                     <tr>
                         <td style="width: 44%; padding-left: 18px;">TOTAL</td>
                         <td style="width: 12%; text-align: center;">:</td>
-                        <td style="text-align: center;">{{ $rp($invoice->total) }}</td>
+                        <td style="text-align: center;">{{ $rp($invoice->amount_due) }}</td>
                     </tr>
                 </table>
-                @if ($invoice->status === 'partial')
+                @if ($invoice->document_status === 'partial')
                     <table class="sum" style="margin-top: 8px; padding: 0 18px;">
                         <tr><td class="k">Dibayar</td><td class="colon">:</td><td class="v muted">{{ $rp($invoice->paid_amount) }}</td></tr>
-                        <tr><td class="k">Sisa</td><td class="colon">:</td><td class="v" style="font-weight: bold;">{{ $rp($invoice->remaining) }}</td></tr>
+                        <tr><td class="k">Sisa</td><td class="colon">:</td><td class="v" style="font-weight: bold;">{{ $rp(max(0, $invoice->amount_due - (float) $invoice->paid_amount)) }}</td></tr>
                     </table>
                 @endif
             </td>

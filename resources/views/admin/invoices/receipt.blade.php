@@ -44,7 +44,7 @@
         <tr><td class="k">Terbilang</td><td style="font-style: italic;">{{ ucfirst($words) }}</td></tr>
         <tr><td class="k">Untuk pembayaran</td><td>Invoice {{ $invoice->invoice_number }}{{ $forWhat ? ' — ' . $forWhat : '' }}@if ($payment->note)<br><span class="muted">{{ $payment->note }}</span>@endif</td></tr>
         <tr><td class="k">Tanggal / metode</td><td>{{ $payment->paid_at->locale('id')->translatedFormat('j F Y') }}{{ $payment->method ? ' · ' . $payment->method : '' }}</td></tr>
-        <tr><td class="k">Sisa tagihan</td><td>{{ $remainingAfter > 0 ? $rp($remainingAfter) . ' dari total ' . $rp($invoice->total) : 'Lunas' }}</td></tr>
+        <tr><td class="k">Sisa tagihan</td><td>{{ $remainingAfter > 0 ? $rp($remainingAfter) . ' dari total ' . $rp($invoice->amount_due) : 'Lunas' }}</td></tr>
     </table>
 
     <table style="margin-top: 18px;">
