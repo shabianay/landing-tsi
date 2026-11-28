@@ -22,6 +22,8 @@ class TrackPageViews
             && ! $request->expectsJson()
             && ! str_starts_with($request->path(), 'admin')
             && ! str_starts_with($request->path(), '_')
+            // Client invoice links carry a secret token; never store them.
+            && ! str_starts_with($request->path(), 'invoice/')
             && ! in_array($request->path(), ['up', 'sitemap.xml', 'robots.txt'], true)) {
             try {
                 PageView::create([

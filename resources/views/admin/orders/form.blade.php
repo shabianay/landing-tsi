@@ -4,6 +4,8 @@
     use App\Models\Order;
     $editing = $order->exists;
     $date = fn ($field) => old($field, $order->{$field}?->format('Y-m-d'));
+    $linked = $editing && $order->invoices->isNotEmpty();
+    $invoiceBadge = ['paid' => 'bg-emerald-50 text-emerald-800', 'partial' => 'bg-amber-50 text-amber-900', 'unpaid' => 'bg-red-50 text-red-800'];
 @endphp
 
 @section('title', ($editing ? 'Ubah proyek' : 'Proyek baru') . ' — Admin TSI')
@@ -74,12 +76,15 @@
         </div>
         <div>
             <label for="payment_date" class="field-label">Tanggal DP</label>
-            <input id="payment_date" type="date" name="payment_date" value="{{ $date('payment_date') }}" class="field">
+            <input id="payment_date" type="date" name="payment_date" value="{{ $date('payment_date') }}" class="field" @if ($linked) readonly aria-describedby="dates-from-invoice" @endif>
         </div>
         <div>
             <label for="payment_lunas_date" class="field-label">Tanggal lunas</label>
-            <input id="payment_lunas_date" type="date" name="payment_lunas_date" value="{{ $date('payment_lunas_date') }}" class="field">
+            <input id="payment_lunas_date" type="date" name="payment_lunas_date" value="{{ $date('payment_lunas_date') }}" class="field" @if ($linked) readonly aria-describedby="dates-from-invoice" @endif>
         </div>
+        @if ($linked)
+            <p id="dates-from-invoice" class="field-hint sm:col-span-2">Tanggal DP dan lunas terisi otomatis dari pembayaran invoice proyek ini.</p>
+        @endif
         @if ($editing)
             <div>
                 <label for="status" class="field-label">Status</label>
@@ -95,11 +100,30 @@
     <div class="flex flex-wrap items-center gap-3 border-t border-line pt-6">
         <button type="submit" class="btn-primary">{{ $editing ? 'Simpan perubahan' : 'Simpan proyek' }}</button>
         <a href="{{ route('admin.orders.index', request('return') === 'list' ? ['view' => 'list'] : []) }}" class="btn-secondary">Batal</a>
-        @if ($editing)
-            <a href="{{ route('admin.invoices.create', ['client' => $order->order_client_id]) }}" class="ml-auto text-sm font-semibold text-primary-700 underline">Buat invoice untuk klien ini</a>
-        @endif
     </div>
 </form>
+
+@if ($editing)
+    <section class="mt-6 max-w-3xl border border-line bg-white" aria-labelledby="order-invoices">
+        <header class="flex flex-wrap items-center justify-between gap-3 border-b border-line px-5 py-4 sm:px-8">
+            <h2 id="order-invoices" class="font-bold text-dark-300">Invoice proyek ini</h2>
+            <a href="{{ route('admin.invoices.create', ['order' => $order->id]) }}" class="btn-primary !min-h-10 !px-4 text-sm">+ Buat invoice</a>
+        </header>
+        @if ($order->invoices->isEmpty())
+            <p class="px-5 py-6 text-sm text-dark-100 sm:px-8">Belum ada invoice untuk proyek ini. Invoice yang dibuat dari sini otomatis terisi klien, pekerjaan, dan harganya.</p>
+        @else
+            <ul class="divide-y divide-line">
+                @foreach ($order->invoices as $invoice)
+                    <li class="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 px-5 py-3 sm:px-8">
+                        <a href="{{ route('admin.invoices.edit', $invoice) }}" class="num font-semibold text-dark-300 [overflow-wrap:anywhere] hover:underline">{{ $invoice->invoice_number }}</a>
+                        <span class="num text-sm text-dark-100">@rp($invoice->paid_amount) / @rp($invoice->total)</span>
+                        <span class="px-2 py-0.5 text-xs font-bold {{ $invoiceBadge[$invoice->status] }}">{{ $invoice->status_label }}</span>
+                    </li>
+                @endforeach
+            </ul>
+        @endif
+    </section>
+@endif
 
 @if ($editing)
     <form method="POST" action="{{ route('admin.orders.destroy', $order) }}" data-confirm="Hapus proyek {{ $order->client_name }}? Tindakan ini tidak bisa dibatalkan." class="mt-4 max-w-3xl text-right">

@@ -9,7 +9,7 @@
 @endphp
 
 @section('content')
-@include('admin.partials.pm-head', ['title' => 'Laporan Keuangan', 'subtitle' => 'Dihitung dari invoice. Periode: ' . $period . '.'])
+@include('admin.partials.pm-head', ['title' => 'Laporan Keuangan', 'subtitle' => 'Tagihan menurut tanggal invoice, uang masuk menurut tanggal pembayaran. Periode: ' . $period . '.'])
 
 <form method="GET" class="mb-6 flex flex-wrap items-end gap-2">
     <div>

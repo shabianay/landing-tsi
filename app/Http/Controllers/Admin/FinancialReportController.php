@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Invoice;
+use App\Models\InvoicePayment;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -23,14 +24,17 @@ class FinancialReportController extends Controller
         $yearInvoices = Invoice::withAmounts()->whereYear('invoice_date', $year)->orderByDesc('invoice_date')->get();
         $invoices = $month ? $yearInvoices->filter(fn ($i) => (int) $i->invoice_date->format('n') === $month)->values() : $yearInvoices;
 
-        $months = collect(range(1, 12))->map(function (int $m) use ($yearInvoices) {
+        // Billed = by invoice date. Money in = by the date each payment was received.
+        $yearPayments = InvoicePayment::whereYear('paid_at', $year)->get(['amount', 'paid_at']);
+
+        $months = collect(range(1, 12))->map(function (int $m) use ($yearInvoices, $yearPayments) {
             $items = $yearInvoices->filter(fn ($i) => (int) $i->invoice_date->format('n') === $m);
 
             return (object) [
                 'month' => $m,
                 'count' => $items->count(),
                 'total' => (float) $items->sum->total,
-                'paid' => (float) $items->sum->paid_capped,
+                'paid' => (float) $yearPayments->filter(fn ($p) => (int) $p->paid_at->format('n') === $m)->sum('amount'),
             ];
         });
 
@@ -41,7 +45,7 @@ class FinancialReportController extends Controller
             ->when($month, fn ($q) => $q->whereMonth('invoice_date', $month));
         $summary = Invoice::summarize($periodQuery);
         $totalRevenue = $summary['total'];
-        $totalPaid = $summary['paid'];
+        $totalPaid = (float) ($month ? $months[$month - 1]->paid : $months->sum('paid'));
 
         return view('admin.financial.index', [
             'year' => $year,
@@ -49,7 +53,7 @@ class FinancialReportController extends Controller
             'years' => $years,
             'invoices' => $invoices,
             'months' => $months,
-            'maxMonth' => max(1, $months->max('total')),
+            'maxMonth' => max(1, $months->max('total'), $months->max('paid')),
             'totalRevenue' => $totalRevenue,
             'totalPaid' => $totalPaid,
             'unpaid' => $summary['unpaid'],

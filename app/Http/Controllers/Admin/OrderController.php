@@ -25,7 +25,8 @@ class OrderController extends Controller
             'q' => ['nullable', 'string', 'max:100'],
         ]);
 
-        $query = Order::query()->latest();
+        // Linked invoices (with SQL amounts) give each project its payment badge.
+        $query = Order::query()->with(['invoices' => fn ($q) => $q->withAmounts()])->latest();
 
         if (! empty($filters['q'])) {
             $term = '%' . addcslashes($filters['q'], '%_\\') . '%';
@@ -76,6 +77,8 @@ class OrderController extends Controller
 
     public function edit(Order $order): View
     {
+        $order->load(['invoices' => fn ($q) => $q->withAmounts()->orderBy('invoice_date')]);
+
         return view('admin.orders.form', [
             'order' => $order,
             'clients' => OrderClient::orderBy('name')->get(),
@@ -86,6 +89,11 @@ class OrderController extends Controller
     public function update(Request $request, Order $order): RedirectResponse
     {
         $data = $this->validated($request);
+        if ($order->invoices()->exists()) {
+            // Payment dates of a project with invoices come from those invoices (see Order::syncPaymentDatesFromInvoices).
+            $data['payment_date'] = $order->payment_date?->toDateString();
+            $data['payment_lunas_date'] = $order->payment_lunas_date?->toDateString();
+        }
         $requested = $request->validate(['status' => ['nullable', Rule::in(Order::STATUSES)]])['status'] ?? null;
         $data['status'] = $order->statusAfterEdit($data, $requested);
 

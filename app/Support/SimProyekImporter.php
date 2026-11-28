@@ -115,6 +115,14 @@ class SimProyekImporter
                     ]);
                     $count['items']++;
                 }
+                // The old app kept only a total paid; it becomes one history entry on the invoice date.
+                if ((float) ($row['paid_amount'] ?? 0) > 0) {
+                    $invoice->payments()->create([
+                        'amount' => $row['paid_amount'],
+                        'paid_at' => $row['invoice_date'],
+                        'note' => 'Diimpor (tanggal = tanggal invoice).',
+                    ]);
+                }
                 $count['invoices']++;
             }
 

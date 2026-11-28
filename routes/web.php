@@ -24,6 +24,8 @@ use App\Http\Controllers\Admin\AccountController;
 use App\Http\Controllers\Admin\ActivityLogController;
 use App\Http\Controllers\Admin\FinancialReportController;
 use App\Http\Controllers\Admin\InvoiceController;
+use App\Http\Controllers\Admin\InvoicePaymentController;
+use App\Http\Controllers\Admin\InvoiceShareController;
 use App\Http\Controllers\Admin\OrderClientController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\SearchController;
@@ -41,6 +43,9 @@ Route::get('/about', [HomeController::class, 'about'])->name('about');
 Route::get('/jobs', [JobController::class, 'index'])->name('jobs.index');
 Route::post('/jobs/apply', [JobController::class, 'store'])->middleware('throttle:5,1')->name('jobs.apply');
 Route::get('/jobs/thanks', [JobController::class, 'thanks'])->name('jobs.thanks');
+// Client-facing invoice PDF behind a secret 40-character link (see Invoice::shareUrl()).
+Route::get('/invoice/{token}', [InvoiceShareController::class, 'show'])
+    ->where('token', '[A-Za-z0-9]{40}')->middleware('throttle:30,1')->name('invoices.public');
 Route::get('/contact', [ContactController::class, 'index'])->name('contact');
 Route::post('/contact', [ContactController::class, 'store'])->middleware('throttle:3,1')->name('contact.store');
 
@@ -90,7 +95,12 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/invoices/settings', [InvoiceController::class, 'settingsForm'])->name('invoices.settings');
     Route::post('/invoices/settings', [InvoiceController::class, 'updateSettings'])->name('invoices.settings.update');
     Route::get('/invoices/{invoice}/pdf', [InvoiceController::class, 'pdf'])->whereNumber('invoice')->name('invoices.pdf');
-    Route::patch('/invoices/{invoice}/paid', [InvoiceController::class, 'updatePaid'])->whereNumber('invoice')->name('invoices.paid');
+    Route::post('/invoices/{invoice}/payments', [InvoicePaymentController::class, 'store'])->whereNumber('invoice')->name('invoices.payments.store');
+    Route::delete('/invoices/{invoice}/payments/{payment}', [InvoicePaymentController::class, 'destroy'])->whereNumber(['invoice', 'payment'])->name('invoices.payments.destroy');
+    Route::get('/invoices/{invoice}/payments/{payment}/receipt', [InvoicePaymentController::class, 'receipt'])->whereNumber(['invoice', 'payment'])->name('invoices.payments.receipt');
+    Route::post('/invoices/{invoice}/whatsapp', [InvoiceShareController::class, 'whatsapp'])->whereNumber('invoice')->name('invoices.share.whatsapp');
+    Route::post('/invoices/{invoice}/email', [InvoiceShareController::class, 'email'])->whereNumber('invoice')->middleware('throttle:10,1')->name('invoices.share.email');
+    Route::post('/invoices/{invoice}/reset-link', [InvoiceShareController::class, 'resetLink'])->whereNumber('invoice')->name('invoices.share.reset');
     Route::resource('invoices', InvoiceController::class)->except(['show']);
     Route::get('/financial', [FinancialReportController::class, 'index'])->name('financial.index');
     Route::get('/activity-logs', [ActivityLogController::class, 'index'])->name('activity-logs.index');

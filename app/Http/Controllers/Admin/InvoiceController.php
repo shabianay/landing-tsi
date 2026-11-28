@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\ActivityLog;
 use App\Models\Invoice;
+use App\Models\Order;
 use App\Models\OrderClient;
 use App\Models\Setting;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -59,14 +60,21 @@ class InvoiceController extends Controller
 
     public function create(Request $request): View
     {
+        $invoice = new Invoice(['invoice_date' => today(), 'discount_type' => 'fixed', 'paid_amount' => 0]);
+        $selectedClient = $request->integer('client') ?: null;
+
+        // "Buat invoice" from a project: client, project and the first item are filled in.
+        if ($order = Order::find($request->integer('order'))) {
+            $invoice->order_id = $order->id;
+            $selectedClient = $order->order_client_id;
+            $invoice->setRelation('items', collect([new \App\Models\InvoiceItem(['item_name' => $order->task_type, 'item_qty' => 1, 'item_price' => $order->price])]));
+        }
+
         return view('admin.invoices.form', [
-            'invoice' => new Invoice([
-                'invoice_date' => today(),
-                'discount_type' => 'fixed',
-                'paid_amount' => 0,
-            ]),
+            'invoice' => $invoice,
             'clients' => OrderClient::orderBy('name')->get(),
-            'selectedClient' => $request->integer('client') ?: null,
+            'orders' => $this->ordersForForm(),
+            'selectedClient' => $selectedClient,
             'ppnRate' => Invoice::ppnRate(),
         ]);
     }
@@ -84,8 +92,19 @@ class InvoiceController extends Controller
             $number = $manualNumber ?: Invoice::nextNumber(\Illuminate\Support\Carbon::parse($data['invoice_date']));
             try {
                 $invoice = DB::transaction(function () use ($attributes, $number, $data) {
-                    $invoice = Invoice::create($attributes + ['invoice_number' => $number]);
+                    $invoice = Invoice::create(['paid_amount' => 0] + $attributes + ['invoice_number' => $number]);
                     $this->syncItems($invoice, $data);
+
+                    // A payment already received (e.g. the DP) becomes the first history entry.
+                    if ((float) ($data['paid_amount'] ?? 0) > 0) {
+                        $invoice->payments()->create([
+                            'amount' => $data['paid_amount'],
+                            'paid_at' => $data['invoice_date'],
+                            'method' => $data['payment_method'] ?? null,
+                            'note' => 'Dicatat saat invoice dibuat.',
+                        ]);
+                    }
+                    $invoice->syncPaidAmount();
 
                     return $invoice;
                 });
@@ -105,13 +124,15 @@ class InvoiceController extends Controller
 
     public function edit(Invoice $invoice): View
     {
-        $invoice->load('items');
+        $invoice->load(['items', 'payments', 'client', 'order']);
 
         return view('admin.invoices.form', [
             'invoice' => $invoice,
             'clients' => OrderClient::orderBy('name')->get(),
+            'orders' => $this->ordersForForm(),
             'selectedClient' => $invoice->order_client_id,
             'ppnRate' => $this->rateFor($invoice),
+            'shareUrl' => $invoice->share_token ? route('invoices.public', $invoice->share_token) : null,
         ]);
     }
 
@@ -119,40 +140,31 @@ class InvoiceController extends Controller
     {
         $data = $this->validated($request, $invoice);
         $attributes = $this->invoiceAttributes($data, $this->rateFor($invoice));
+        $previousOrder = $invoice->order;
 
         DB::transaction(function () use ($invoice, $data, $attributes) {
             $invoice->update($attributes);
             $this->syncItems($invoice, $data);
+            $invoice->unsetRelation('order');
+            $invoice->syncPaidAmount();
         });
+        if ($previousOrder && $previousOrder->id !== $invoice->order_id) {
+            $previousOrder->syncPaymentDatesFromInvoices();
+        }
 
         ActivityLog::record('updated', $invoice, "Mengubah invoice {$invoice->invoice_number}");
 
-        return redirect()->route('admin.invoices.index')
+        return redirect()->route('admin.invoices.edit', $invoice)
             ->with('success', "Invoice {$invoice->invoice_number} berhasil diperbarui.")
             ->with('pdf_url', route('admin.invoices.pdf', $invoice));
     }
 
-    /** Record a payment: the amount paid so far. */
-    public function updatePaid(Request $request, Invoice $invoice): RedirectResponse
-    {
-        $invoice->load('items');
-        $total = $invoice->total;
-        $data = $request->validate(
-            ['paid_amount' => ['required', 'numeric', 'min:0', 'max:' . $total]],
-            ['paid_amount.max' => 'Jumlah dibayar tidak boleh melebihi total invoice (Rp' . number_format($total, 0, ',', '.') . ').'],
-            ['paid_amount' => 'jumlah dibayar'],
-        );
-
-        $invoice->update(['paid_amount' => $data['paid_amount']]);
-        ActivityLog::record('updated', $invoice, "Mencatat pembayaran invoice {$invoice->invoice_number}: Rp" . number_format((float) $data['paid_amount'], 0, ',', '.'));
-
-        return back()->with('success', "Pembayaran invoice {$invoice->invoice_number} disimpan ({$invoice->fresh('items')->status_label}).");
-    }
-
     public function destroy(Invoice $invoice): RedirectResponse
     {
+        $order = $invoice->order;
         ActivityLog::record('deleted', $invoice, "Menghapus invoice {$invoice->invoice_number}");
         $invoice->delete();
+        $order?->syncPaymentDatesFromInvoices();
 
         return redirect()->route('admin.invoices.index')->with('success', 'Invoice berhasil dihapus.');
     }
@@ -160,13 +172,46 @@ class InvoiceController extends Controller
     public function pdf(Request $request, Invoice $invoice): Response
     {
         $invoice->load('items');
-        $settings = $this->settings();
-        $logo = $this->logoDataUri($settings['invoice_logo'] ?? null);
+        $filename = $this->pdfFilename($invoice);
 
-        $pdf = Pdf::loadView('admin.invoices.pdf', compact('invoice', 'settings', 'logo'))->setPaper('a4');
-        $filename = 'invoice-' . str_replace('/', '-', $invoice->invoice_number) . '.pdf';
+        return response($this->renderPdf($invoice), 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => ($request->boolean('download') ? 'attachment' : 'inline') . '; filename="' . $filename . '"',
+        ]);
+    }
 
-        return $request->boolean('download') ? $pdf->download($filename) : $pdf->stream($filename);
+    /** The invoice PDF as bytes (admin view, public link and email attachment share it). */
+    public function renderPdf(Invoice $invoice): string
+    {
+        $invoice->loadMissing('items');
+
+        return Pdf::loadView('admin.invoices.pdf', [
+            'invoice' => $invoice,
+            'settings' => $this->pdfSettings(),
+            'logo' => $this->pdfLogo(),
+        ])->setPaper('a4')->output();
+    }
+
+    public function pdfFilename(Invoice $invoice): string
+    {
+        return 'invoice-' . str_replace('/', '-', $invoice->invoice_number) . '.pdf';
+    }
+
+    /** @return array<string, string> */
+    public function pdfSettings(): array
+    {
+        return $this->settings();
+    }
+
+    public function pdfLogo(): ?string
+    {
+        return $this->logoDataUri($this->settings()['invoice_logo'] ?? null);
+    }
+
+    /** Projects for the "Proyek" select, newest first, with their client for filtering. */
+    private function ordersForForm()
+    {
+        return Order::query()->select(['id', 'order_client_id', 'client_name', 'task_type', 'deadline'])->latest()->get();
     }
 
     public function settingsForm(): View
@@ -260,8 +305,17 @@ class InvoiceController extends Controller
         if ($amounts['subtotal'] > $max || $amounts['total'] > $max) {
             throw ValidationException::withMessages(['items' => 'Total invoice terlalu besar (maksimal Rp' . number_format($max, 0, ',', '.') . ').']);
         }
-        if ((float) $data['paid_amount'] > $amounts['total']) {
-            throw ValidationException::withMessages(['paid_amount' => 'Jumlah dibayar tidak boleh melebihi total invoice (Rp' . number_format($amounts['total'], 0, ',', '.') . ').']);
+        // New invoice: the first payment typed in the form. Existing invoice: the payment history.
+        $paid = $invoice ? (float) $invoice->paid_amount : (float) ($data['paid_amount'] ?? 0);
+        if ($paid > $amounts['total'] + 0.005) {
+            throw ValidationException::withMessages($invoice
+                ? ['items' => 'Total baru (Rp' . number_format($amounts['total'], 0, ',', '.') . ') lebih kecil dari yang sudah dibayar (Rp' . number_format($paid, 0, ',', '.') . '). Hapus pembayaran yang salah dulu.']
+                : ['paid_amount' => 'Jumlah dibayar tidak boleh melebihi total invoice (Rp' . number_format($amounts['total'], 0, ',', '.') . ').']);
+        }
+
+        // The project must belong to the client being billed.
+        if (! empty($data['order_id']) && ! Order::whereKey($data['order_id'])->where('order_client_id', $data['order_client_id'])->exists()) {
+            throw ValidationException::withMessages(['order_id' => 'Proyek yang dipilih bukan milik klien ini.']);
         }
 
         return $data;
@@ -274,8 +328,11 @@ class InvoiceController extends Controller
             'invoice_number' => [$invoice ? 'prohibited' : 'nullable', 'string', 'max:50', Rule::unique('invoices', 'invoice_number')],
             'invoice_date' => ['required', 'date'],
             'order_client_id' => ['required', 'exists:order_clients,id'],
+            'order_id' => ['nullable', 'integer', 'exists:orders,id'],
             'notes' => ['nullable', 'string', 'max:2000'],
-            'paid_amount' => ['required', 'numeric', 'min:0', 'max:9999999999999'],
+            // Only when creating; afterwards payments are recorded in the payment history.
+            'paid_amount' => $invoice ? ['exclude'] : ['nullable', 'numeric', 'min:0', 'max:9999999999999'],
+            'payment_method' => $invoice ? ['exclude'] : ['nullable', Rule::in(Order::PAYMENT_METHODS)],
             'use_ppn' => ['nullable', 'boolean'],
             'discount_amount' => ['nullable', 'numeric', 'min:0', 'max:9999999999999'],
             'discount_type' => ['required', Rule::in(['fixed', 'percent'])],
@@ -289,6 +346,7 @@ class InvoiceController extends Controller
             'invoice_number' => 'nomor invoice',
             'invoice_date' => 'tanggal invoice',
             'order_client_id' => 'klien',
+            'order_id' => 'proyek',
             'paid_amount' => 'jumlah dibayar',
             'discount_amount' => 'diskon',
             'items.*.name' => 'nama item',
@@ -310,10 +368,10 @@ class InvoiceController extends Controller
         return [
             'invoice_date' => $data['invoice_date'],
             'order_client_id' => $client->id,
+            'order_id' => $data['order_id'] ?? null,
             'client_name' => $client->name,
             'client_address' => $client->address,
             'notes' => $data['notes'] ?? null,
-            'paid_amount' => $data['paid_amount'],
             'ppn_rate' => $usePpn ? $ppnRate : 0,
             'ppn_amount' => $amounts['ppn'],
             'discount_amount' => $discount,
