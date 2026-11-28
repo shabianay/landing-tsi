@@ -53,11 +53,11 @@
                 <div><dt class="text-xs text-dark-100">Total</dt><dd class="font-semibold text-dark-300">@rp($invoice->total)</dd></div>
                 <div><dt class="text-xs text-dark-100">Dibayar</dt><dd class="text-dark-200">@rp($invoice->paid_amount)</dd></div>
             </dl>
-            <form method="POST" action="{{ route('admin.invoices.paid', $invoice) }}" x-show="pay" x-cloak class="mt-3 flex gap-2">
+            <form method="POST" action="{{ route('admin.invoices.payments.store', $invoice) }}" x-show="pay" x-cloak class="mt-3 flex gap-2">
                 @csrf
-                @method('PATCH')
-                <label class="sr-only" for="m-paid-{{ $invoice->id }}">Jumlah dibayar</label>
-                <input id="m-paid-{{ $invoice->id }}" type="number" name="paid_amount" min="0" max="{{ $invoice->total }}" step="any" value="{{ (float) $invoice->paid_amount }}" class="field num !py-2">
+                <input type="hidden" name="paid_at" value="{{ today()->format('Y-m-d') }}">
+                <label class="sr-only" for="m-paid-{{ $invoice->id }}">Jumlah pembayaran baru (hari ini)</label>
+                <input id="m-paid-{{ $invoice->id }}" type="number" name="amount" min="1" max="{{ $invoice->remaining }}" step="any" value="{{ (float) $invoice->remaining }}" class="field num !py-2">
                 <button type="submit" class="btn-ink !min-h-0 !px-4 text-sm">Simpan</button>
             </form>
             <div class="mt-3 flex flex-wrap gap-x-4 gap-y-1 border-t border-line pt-3 text-sm">
@@ -94,11 +94,11 @@
                     <td class="num px-4 py-3 text-right font-semibold text-dark-300">@rp($invoice->total)</td>
                     <td class="num px-4 py-3 text-right text-dark-200">
                         @rp($invoice->paid_amount)
-                        <form method="POST" action="{{ route('admin.invoices.paid', $invoice) }}" x-show="pay" x-cloak class="mt-2 flex justify-end gap-1">
+                        <form method="POST" action="{{ route('admin.invoices.payments.store', $invoice) }}" x-show="pay" x-cloak class="mt-2 flex justify-end gap-1">
                             @csrf
-                            @method('PATCH')
-                            <label class="sr-only" for="paid-{{ $invoice->id }}">Jumlah dibayar</label>
-                            <input id="paid-{{ $invoice->id }}" type="number" name="paid_amount" min="0" max="{{ $invoice->total }}" step="any" value="{{ (float) $invoice->paid_amount }}" class="w-32 border-line py-1 text-right text-sm">
+                            <input type="hidden" name="paid_at" value="{{ today()->format('Y-m-d') }}">
+                            <label class="sr-only" for="paid-{{ $invoice->id }}">Jumlah pembayaran baru (hari ini)</label>
+                            <input id="paid-{{ $invoice->id }}" type="number" name="amount" min="1" max="{{ $invoice->remaining }}" step="any" value="{{ (float) $invoice->remaining }}" class="w-32 border-line py-1 text-right text-sm">
                             <button type="submit" class="bg-dark-300 px-2.5 text-xs font-semibold text-white">Simpan</button>
                         </form>
                     </td>

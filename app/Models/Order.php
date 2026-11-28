@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /** A client project ("proyek pesanan") tracked on the Kanban board. */
 class Order extends Model
@@ -37,6 +38,50 @@ class Order extends Model
     public function client(): BelongsTo
     {
         return $this->belongsTo(OrderClient::class, 'order_client_id');
+    }
+
+    public function invoices(): HasMany
+    {
+        return $this->hasMany(Invoice::class);
+    }
+
+    /**
+     * With invoices linked, the payment dates come from them: DP date = first payment,
+     * lunas date = the payment that settled the last invoice. The status follows the
+     * same rule as when the dates are typed in by hand (Cancelled stays Cancelled).
+     */
+    public function syncPaymentDatesFromInvoices(): void
+    {
+        $invoices = $this->invoices()->with(['items', 'payments'])->get();
+        if ($invoices->isEmpty()) {
+            return;
+        }
+
+        $payments = $invoices->flatMap->payments->sortBy('paid_at');
+        $allPaid = $invoices->every(fn (Invoice $i) => $i->status === 'paid') && $invoices->sum->total > 0;
+
+        $dates = [
+            'payment_date' => $payments->first()?->paid_at?->toDateString(),
+            'payment_lunas_date' => $allPaid ? $payments->last()?->paid_at?->toDateString() : null,
+        ];
+
+        if ($dates['payment_date'] !== $this->payment_date?->toDateString()
+            || $dates['payment_lunas_date'] !== $this->payment_lunas_date?->toDateString()) {
+            $this->update($dates + ['status' => self::statusFromPayments($dates, $this->status)]);
+        }
+    }
+
+    /** Payment state across the linked invoices: null (none), unpaid, partial or paid. */
+    public function invoicePaymentStatus(): ?string
+    {
+        $invoices = $this->relationLoaded('invoices') ? $this->invoices : $this->invoices()->withAmounts()->get();
+        if ($invoices->isEmpty()) {
+            return null;
+        }
+        $total = $invoices->sum->total;
+        $paid = $invoices->sum(fn ($i) => (float) $i->paid_amount);
+
+        return $total <= 0 || $paid >= $total ? 'paid' : ($paid > 0 ? 'partial' : 'unpaid');
     }
 
     public function getStatusLabelAttribute(): string

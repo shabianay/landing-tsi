@@ -79,6 +79,14 @@ document.addEventListener('change', (event) => {
     }
 });
 
+// <input data-select-on-focus> selects its text on focus, so a link is easy to copy.
+document.addEventListener('focusin', (event) => {
+    const field = event.target;
+    if (field instanceof HTMLInputElement && field.dataset.selectOnFocus !== undefined) {
+        field.select();
+    }
+});
+
 // Admin Kanban: drag a project card to another column to change its status.
 const board = document.querySelector('[data-kanban]');
 if (board) {

@@ -95,8 +95,10 @@ class ProjectManagementTest extends TestCase
         $this->assertStringEndsWith('/002', Invoice::nextNumber());
 
         // A payment above the total is refused.
-        $this->patch(route('admin.invoices.paid', $invoice), ['paid_amount' => 2000000])->assertSessionHasErrors('paid_amount');
-        $this->patch(route('admin.invoices.paid', $invoice), ['paid_amount' => 1498500])->assertRedirect();
+        // The DP typed in the form became the first payment; a payment above the remaining balance is refused.
+        $this->assertSame(1, $invoice->payments()->count());
+        $this->post(route('admin.invoices.payments.store', $invoice), ['amount' => 1500000, 'paid_at' => today()->toDateString()])->assertSessionHasErrors('amount');
+        $this->post(route('admin.invoices.payments.store', $invoice), ['amount' => 998500, 'paid_at' => today()->toDateString(), 'method' => 'BCA'])->assertRedirect();
         $this->assertSame('paid', $invoice->fresh('items')->status);
 
         $pdf = $this->get(route('admin.invoices.pdf', $invoice));
@@ -122,6 +124,7 @@ class ProjectManagementTest extends TestCase
         $this->actingAs($this->admin());
         $invoice = Invoice::create(['invoice_number' => 'A1', 'invoice_date' => now()->startOfYear()->addMonths(2), 'client_name' => 'X', 'paid_amount' => 100000]);
         $invoice->items()->create(['item_name' => 'Item', 'item_qty' => 1, 'item_price' => 300000]);
+        $invoice->payments()->create(['amount' => 100000, 'paid_at' => now()->startOfYear()->addMonths(2)]);
         $unpaid = Invoice::create(['invoice_number' => 'A2', 'invoice_date' => now()->startOfYear()->addMonths(3), 'client_name' => 'Y', 'paid_amount' => 0]);
         $unpaid->items()->create(['item_name' => 'Item', 'item_qty' => 1, 'item_price' => 450000]);
 

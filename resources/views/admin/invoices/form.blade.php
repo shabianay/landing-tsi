@@ -3,10 +3,15 @@
 @php
     use App\Models\Invoice;
     $editing = $invoice->exists;
-    $items = old('items', $editing
+    $items = old('items', $invoice->relationLoaded('items') && $invoice->items->isNotEmpty()
         ? $invoice->items->map(fn ($i) => ['name' => $i->item_name, 'qty' => $i->item_qty, 'price' => (int) $i->item_price])->all()
         : [['name' => '', 'qty' => 1, 'price' => 0]]);
     $usePpn = (bool) old('use_ppn', $editing ? (float) $invoice->ppn_amount > 0 : false);
+    $projectOptions = $orders->map(fn ($o) => [
+        'id' => $o->id,
+        'client' => $o->order_client_id,
+        'label' => $o->task_type . ' — deadline ' . $o->deadline?->translatedFormat('d M Y'),
+    ])->values();
 @endphp
 
 @section('title', ($editing ? 'Ubah invoice' : 'Invoice baru') . ' — Admin TSI')
@@ -24,6 +29,10 @@
           discountType: @js(old('discount_type', $invoice->discount_type ?? 'fixed')),
           paid: @js((float) old('paid_amount', $invoice->paid_amount ?? 0)),
           ppnRate: @js((float) $ppnRate),
+          client: @js((string) old('order_client_id', $selectedClient ?? '')),
+          orderId: @js((string) old('order_id', $invoice->order_id ?? '')),
+          projects: @js($projectOptions),
+          get clientProjects() { return this.projects.filter(p => String(p.client) === this.client); },
           rp(n) { return 'Rp' + Math.round(n || 0).toLocaleString('id-ID'); },
           get subtotal() { return this.items.reduce((s, i) => s + (Number(i.qty) || 0) * (Number(i.price) || 0), 0); },
           get discountValue() { const d = Number(this.discount) || 0; return this.discountType === 'percent' ? this.subtotal * Math.min(d, 100) / 100 : d; },
@@ -57,7 +66,7 @@
                 @if ($clients->isEmpty())
                     <p class="border border-dashed border-dark-100/40 p-4 text-sm text-dark-100">Belum ada data klien. <a href="{{ route('admin.order-clients.create') }}" class="font-semibold text-primary-700 underline">Tambah klien dulu</a>.</p>
                 @else
-                    <select id="order_client_id" name="order_client_id" required class="field" @error('order_client_id') aria-invalid="true" @enderror>
+                    <select id="order_client_id" name="order_client_id" required x-model="client" @change="orderId = ''" class="field" @error('order_client_id') aria-invalid="true" @enderror>
                         <option value="">Pilih klien</option>
                         @foreach ($clients as $client)
                             <option value="{{ $client->id }}" @selected((int) old('order_client_id', $selectedClient) === $client->id)>{{ $client->name }}{{ $client->company ? ' — ' . $client->company : '' }}</option>
@@ -65,6 +74,18 @@
                     </select>
                     <p class="field-hint">Alamat diambil dari data klien.</p>
                 @endif
+            </div>
+            <div>
+                <label for="order_id" class="field-label">Untuk proyek</label>
+                <select id="order_id" name="order_id" x-model="orderId" class="field" :disabled="clientProjects.length === 0" @error('order_id') aria-invalid="true" @enderror>
+                    <option value="">Tidak dihubungkan</option>
+                    <template x-for="p in clientProjects" :key="p.id">
+                        <option :value="String(p.id)" x-text="p.label" :selected="String(p.id) === orderId"></option>
+                    </template>
+                </select>
+                <p class="field-hint" x-show="clientProjects.length === 0">Klien ini belum punya proyek.</p>
+                <p class="field-hint" x-show="clientProjects.length > 0">Tanggal DP dan lunas proyek akan mengikuti pembayaran invoice ini.</p>
+                @error('order_id')<p class="field-error">{{ $message }}</p>@enderror
             </div>
         </section>
 
@@ -123,11 +144,30 @@
                     </select>
                 </div>
             </div>
-            <div>
-                <label for="paid_amount" class="field-label">Sudah dibayar (Rp) *</label>
-                <input id="paid_amount" type="number" name="paid_amount" min="0" step="any" :max="total" x-model.number="paid" required class="field num" @error('paid_amount') aria-invalid="true" @enderror>
-                <p class="field-hint" x-show="paid > total" x-cloak>Melebihi total invoice.</p>
-            </div>
+            @if ($editing)
+                <div class="border-t border-line pt-4 text-sm">
+                    <p class="flex justify-between"><span class="text-dark-100">Sudah dibayar</span><span class="num font-semibold text-dark-300" x-text="rp(paid)"></span></p>
+                    <a href="#pembayaran" class="mt-1 inline-block font-semibold text-primary-700 underline">Lihat / catat pembayaran</a>
+                </div>
+            @else
+                <div class="grid grid-cols-5 gap-2">
+                    <div class="col-span-3">
+                        <label for="paid_amount" class="field-label">Sudah dibayar (Rp)</label>
+                        <input id="paid_amount" type="number" name="paid_amount" min="0" step="any" :max="total" x-model.number="paid" class="field num" @error('paid_amount') aria-invalid="true" @enderror>
+                    </div>
+                    <div class="col-span-2">
+                        <label for="payment_method" class="field-label">Metode</label>
+                        <select id="payment_method" name="payment_method" class="field">
+                            <option value="">—</option>
+                            @foreach (\App\Models\Order::PAYMENT_METHODS as $method)
+                                <option value="{{ $method }}" @selected(old('payment_method') === $method)>{{ $method }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <p class="field-hint col-span-5" x-show="paid > total" x-cloak>Melebihi total invoice.</p>
+                    <p class="field-hint col-span-5" x-show="!(paid > total)">Isi bila klien sudah membayar (mis. DP). Tercatat sebagai pembayaran pertama pada tanggal invoice.</p>
+                </div>
+            @endif
 
             <dl class="num space-y-1.5 border-t border-line pt-4 text-sm">
                 <div class="flex justify-between"><dt class="text-dark-100">Subtotal</dt><dd x-text="rp(subtotal)"></dd></div>
@@ -138,8 +178,15 @@
             </dl>
 
             <button type="submit" class="btn-primary w-full">{{ $editing ? 'Simpan perubahan' : 'Simpan invoice' }}</button>
-            <a href="{{ route('admin.invoices.index') }}" class="btn-secondary w-full">Batal</a>
+            <a href="{{ route('admin.invoices.index') }}" class="btn-secondary w-full">{{ $editing ? 'Kembali ke daftar' : 'Batal' }}</a>
+            @if ($editing)
+                <a href="{{ route('admin.invoices.pdf', $invoice) }}" target="_blank" rel="noopener" class="block text-center text-sm font-semibold text-dark-300 underline">Buka PDF</a>
+            @endif
         </div>
     </aside>
 </form>
+
+@if ($editing)
+    @include('admin.invoices.partials.payments')
+@endif
 @endsection

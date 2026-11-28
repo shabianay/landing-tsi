@@ -10,6 +10,9 @@
         'Completed' => 'border-t-emerald-600',
         'Cancelled' => 'border-t-red-400',
     ];
+    // Payment state of the project's invoices (none shown when it has no invoice).
+    $payBadge = ['paid' => 'bg-emerald-50 text-emerald-800', 'partial' => 'bg-amber-50 text-amber-900', 'unpaid' => 'bg-red-50 text-red-800'];
+    $payLabel = ['paid' => 'Invoice lunas', 'partial' => 'Invoice DP', 'unpaid' => 'Invoice belum bayar'];
 @endphp
 
 @section('content')
@@ -70,6 +73,9 @@
                                 @if ($order->payment_method)
                                     <span class="bg-dark-50 px-1.5 py-0.5 font-semibold text-dark-100">{{ $order->payment_method }}</span>
                                 @endif
+                                @if ($pay = $order->invoicePaymentStatus())
+                                    <span class="px-1.5 py-0.5 font-bold {{ $payBadge[$pay] }}">{{ $payLabel[$pay] }}</span>
+                                @endif
                             </div>
                             <form method="POST" action="{{ route('admin.orders.status', $order) }}" class="mt-3 border-t border-line pt-2.5">
                                 @csrf
@@ -98,6 +104,7 @@
                     <span class="tag shrink-0">{{ $order->status_label }}</span>
                 </div>
                 <p class="text-sm text-dark-100">{{ $order->task_type }}</p>
+                @if ($pay = $order->invoicePaymentStatus())<span class="mt-1 inline-block px-1.5 py-0.5 text-xs font-bold {{ $payBadge[$pay] }}">{{ $payLabel[$pay] }}</span>@endif
                 <p class="mt-2 flex justify-between text-sm"><span class="{{ $order->isOverdue() ? 'font-semibold text-red-700' : 'text-dark-100' }}">{{ $order->deadline->translatedFormat('d M Y') }}</span><span class="num font-semibold text-dark-300">@rp($order->price)</span></p>
             </li>
         @empty
@@ -123,7 +130,7 @@
                         <td class="px-4 py-3 text-dark-200">{{ $order->task_type }}</td>
                         <td class="px-4 py-3 {{ $order->isOverdue() ? 'font-semibold text-red-700' : 'text-dark-100' }}">{{ $order->deadline->translatedFormat('d M Y') }}</td>
                         <td class="num px-4 py-3 text-right font-semibold text-dark-300">@rp($order->price)</td>
-                        <td class="px-4 py-3"><span class="tag">{{ $order->status_label }}</span></td>
+                        <td class="px-4 py-3"><span class="tag">{{ $order->status_label }}</span>@if ($pay = $order->invoicePaymentStatus())<span class="ml-1.5 px-1.5 py-0.5 text-xs font-bold {{ $payBadge[$pay] }}">{{ $payLabel[$pay] }}</span>@endif</td>
                         <td class="px-4 py-3">
                             <div class="flex justify-end gap-3">
                                 <a href="{{ route('admin.orders.edit', [$order, 'return' => 'list']) }}" class="font-semibold text-primary-700 hover:underline">Ubah</a>

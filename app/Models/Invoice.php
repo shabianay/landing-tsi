@@ -16,7 +16,7 @@ class Invoice extends Model
     public const MAX_AMOUNT = 9999999999999;
 
     protected $fillable = [
-        'order_client_id', 'invoice_number', 'invoice_date', 'client_name', 'client_address',
+        'order_client_id', 'order_id', 'invoice_number', 'invoice_date', 'client_name', 'client_address',
         'notes', 'paid_amount', 'ppn_rate', 'ppn_amount', 'discount_amount', 'discount_type',
     ];
 
@@ -39,6 +39,76 @@ class Invoice extends Model
     public function client(): BelongsTo
     {
         return $this->belongsTo(OrderClient::class, 'order_client_id');
+    }
+
+    /** The client project this invoice bills for (optional). */
+    public function order(): BelongsTo
+    {
+        return $this->belongsTo(Order::class);
+    }
+
+    public function payments(): HasMany
+    {
+        return $this->hasMany(InvoicePayment::class)->orderBy('paid_at')->orderBy('id');
+    }
+
+    /**
+     * Recompute paid_amount from the payment history, then let the linked project
+     * pick up its DP / lunas dates.
+     */
+    public function syncPaidAmount(): void
+    {
+        $this->forceFill(['paid_amount' => (float) $this->payments()->sum('amount')])->save();
+        $this->unsetRelation('payments');
+
+        $this->order?->syncPaymentDatesFromInvoices();
+    }
+
+    // --- Client-facing link ---
+
+    /** Secret link the client can open without logging in. Created on first use. */
+    public function shareUrl(): string
+    {
+        if (! $this->share_token) {
+            $this->forceFill(['share_token' => \Illuminate\Support\Str::random(40)])->save();
+        }
+
+        return route('invoices.public', $this->share_token);
+    }
+
+    /** Replace the link: the old one stops working. */
+    public function resetShareToken(): void
+    {
+        $this->forceFill(['share_token' => \Illuminate\Support\Str::random(40)])->save();
+    }
+
+    /** wa.me link with a ready-to-send message (to the client's number when known). */
+    public function whatsappUrl(?string $phone, string $companyName): string
+    {
+        $digits = preg_replace('/\D+/', '', (string) $phone);
+        if (str_starts_with($digits, '0')) {
+            $digits = '62' . substr($digits, 1);
+        } elseif (str_starts_with($digits, '8')) {
+            $digits = '62' . $digits;
+        }
+
+        $rp = fn ($n) => 'Rp' . number_format((float) $n, 0, ',', '.');
+        $lines = [
+            "Halo {$this->client_name},",
+            '',
+            "Berikut invoice {$this->invoice_number} dari {$companyName} sebesar {$rp($this->total)}.",
+        ];
+        if ($this->status === 'partial') {
+            $lines[] = "Sudah dibayar {$rp($this->paid_amount)}, sisa {$rp($this->remaining)}.";
+        } elseif ($this->status === 'paid') {
+            $lines[] = 'Invoice ini sudah lunas. Terima kasih.';
+        }
+        $lines[] = '';
+        $lines[] = 'Lihat atau unduh PDF: ' . $this->shareUrl();
+        $lines[] = '';
+        $lines[] = 'Terima kasih.';
+
+        return 'https://wa.me/' . (strlen($digits) >= 10 ? $digits : '') . '?text=' . rawurlencode(implode("\n", $lines));
     }
 
     /** PPN rate for new invoices, from the invoice settings. */
