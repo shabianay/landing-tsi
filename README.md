@@ -102,7 +102,7 @@ npm run build
 php artisan serve --env=local
 ```
 
-Run `php artisan database:backup --env=local` to create a backup manually. To run the daily 02:00 backup schedule locally, start `php artisan schedule:work --env=local` in a separate terminal. Production servers must run Laravel's scheduler for daily backups.
+Run `php artisan database:backup --env=local` to create a backup manually. In production the daily 02:00 backup is a server cron running `scripts/backup-database.sh` (the host disables `proc_open`), and deploys also back up before migrating. The deploy installs one `schedule:run` cron (`# tsi-schedule`) for the remaining scheduled tasks (page-view pruning 03:00, AI article 08:00).
 
 ## License
 
