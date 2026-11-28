@@ -71,7 +71,9 @@ class InvoiceSettlement
      */
     public static function candidatePairs(): Collection
     {
-        $invoices = Invoice::with(['items', 'payments'])
+        // One query: amounts and "already settled" come from SQL (withAmounts), so the invoice
+        // list can run this on every visit without a query per invoice.
+        $invoices = Invoice::withAmounts()
             ->whereNull('settles_invoice_id')
             ->orderBy('invoice_date')->orderBy('id')
             ->get()

@@ -117,11 +117,13 @@
                                 <button type="button" @click="pay = !pay" class="font-semibold text-emerald-700 hover:underline" :aria-expanded="pay.toString()">Catat bayar</button>
                             @endif
                             <a href="{{ route('admin.invoices.edit', $invoice) }}" class="font-semibold text-primary-700 hover:underline">Ubah</a>
-                            <form method="POST" action="{{ route('admin.invoices.destroy', $invoice) }}" data-confirm="Hapus invoice {{ $invoice->invoice_number }}?">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="font-semibold text-red-700 hover:underline">Hapus</button>
-                            </form>
+                            @unless ($invoice->settledBy)
+                                <form method="POST" action="{{ route('admin.invoices.destroy', $invoice) }}" data-confirm="Hapus invoice {{ $invoice->invoice_number }}?">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="font-semibold text-red-700 hover:underline">Hapus</button>
+                                </form>
+                            @endunless
                         </div>
                     </td>
                 </tr>

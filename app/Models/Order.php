@@ -67,7 +67,14 @@ class Order extends Model
 
         if ($dates['payment_date'] !== $this->payment_date?->toDateString()
             || $dates['payment_lunas_date'] !== $this->payment_lunas_date?->toDateString()) {
-            $this->update($dates + ['status' => self::statusFromPayments($dates, $this->status)]);
+            // Payments only move a project forward (Menunggu → Dikerjakan → Selesai); a status
+            // the admin set by hand is never pulled back, and Batal stays Batal.
+            $rank = ['Pending' => 0, 'Ongoing' => 1, 'Completed' => 2];
+            $fromPayments = self::statusFromPayments($dates, $this->status);
+            $status = isset($rank[$this->status], $rank[$fromPayments]) && $rank[$fromPayments] < $rank[$this->status]
+                ? $this->status
+                : $fromPayments;
+            $this->update($dates + ['status' => $status]);
         }
     }
 

@@ -215,6 +215,71 @@ class InvoiceSettlementTest extends TestCase
         $this->assertTrue(InvoiceSettlement::linkedFromOldPair($later), '"Lepas sambungan" stays available');
     }
 
+    public function test_settled_dp_cannot_be_deleted_while_its_pelunasan_exists(): void
+    {
+        $dp = $this->invoice(2000000, 1000000);
+        InvoiceSettlement::create($dp, today(), 1000000);
+
+        $this->delete(route('admin.invoices.destroy', $dp))->assertSessionHasErrors('invoice');
+        $this->assertNotNull(Invoice::find($dp->id));
+        $this->assertSame(2000000.0, Invoice::summarize(Invoice::query())['total']);
+    }
+
+    public function test_settled_dp_keeps_its_amounts_but_date_and_notes_can_change(): void
+    {
+        $dp = $this->invoice(2000000, 1000000);
+        InvoiceSettlement::create($dp, today(), 1000000);
+        $form = ['invoice_date' => today()->subDays(3)->toDateString(), 'order_client_id' => $this->client->id, 'discount_type' => 'fixed'];
+
+        $this->put(route('admin.invoices.update', $dp), $form + ['items' => [['name' => 'Website', 'qty' => 1, 'price' => 3000000]]])
+            ->assertSessionHasErrors('items');
+        $this->assertEquals(2000000, $dp->fresh('items')->document_total);
+
+        $this->put(route('admin.invoices.update', $dp), $form + ['notes' => 'Catatan baru', 'items' => [['name' => 'Website', 'qty' => 1, 'price' => 2000000]]])
+            ->assertSessionHasNoErrors();
+        $this->assertSame('Catatan baru', $dp->fresh()->notes);
+        $this->get(route('admin.invoices.edit', $dp))->assertSee('dikunci');
+    }
+
+    public function test_payments_never_pull_a_project_status_back(): void
+    {
+        $order = Order::create(['order_client_id' => $this->client->id, 'client_name' => 'Resha', 'task_type' => 'Website', 'deadline' => today(), 'price' => 1, 'status' => 'Pending', 'payment_method' => 'QRIS']);
+        $invoice = $this->invoice(1000000, 0, null, ['order_id' => $order->id]);
+
+        $this->patchJson(route('admin.orders.status', $order), ['status' => 'Completed']);
+        $this->post(route('admin.invoices.payments.store', $invoice), ['amount' => 300000, 'paid_at' => today()->toDateString()]);
+        $this->assertSame('Completed', $order->fresh()->status, 'a status set by hand stays');
+        $this->assertNotNull($order->fresh()->payment_date, 'the DP date is still recorded');
+
+        $other = Order::create(['order_client_id' => $this->client->id, 'client_name' => 'Resha', 'task_type' => 'App', 'deadline' => today(), 'price' => 1, 'status' => 'Pending', 'payment_method' => 'QRIS']);
+        $second = $this->invoice(500000, 0, null, ['order_id' => $other->id]);
+        $this->post(route('admin.invoices.payments.store', $second), ['amount' => 100000, 'paid_at' => today()->toDateString()]);
+        $this->assertSame('Ongoing', $other->fresh()->status, 'payments still move a project forward');
+    }
+
+    public function test_invoice_list_query_count_does_not_grow_with_invoices(): void
+    {
+        $count = function (): int {
+            \Illuminate\Support\Facades\DB::flushQueryLog();
+            \Illuminate\Support\Facades\DB::enableQueryLog();
+            $this->get(route('admin.invoices.index'))->assertOk();
+
+            return count(\Illuminate\Support\Facades\DB::getQueryLog());
+        };
+
+        foreach (range(1, 5) as $n) {
+            $this->invoice(1000000, $n % 2 ? 500000 : 0);
+        }
+        $few = $count();
+        foreach (range(1, 10) as $n) {
+            $this->invoice(1000000, $n % 2 ? 500000 : 0);
+        }
+        $many = $count();
+
+        $this->assertSame($few, $many, "queries: $few for 5 invoices, $many for 15");
+        $this->assertLessThan(30, $many);
+    }
+
     public function test_existing_pairs_are_previewed_then_linked(): void
     {
         // A deal of 1.000.000: DP 500.000, then a second invoice that recorded the full price as paid.
