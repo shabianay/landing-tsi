@@ -29,7 +29,7 @@ class InvoicePaymentsTest extends TestCase
 
     private function invoice(float $price = 1000000, array $extra = []): Invoice
     {
-        $invoice = Invoice::create($extra + ['invoice_number' => 'TSI/11/2026/0' . random_int(10, 99), 'invoice_date' => today(), 'order_client_id' => $this->client->id, 'client_name' => 'Budi']);
+        $invoice = Invoice::create($extra + ['invoice_number' => 'TSI/11/2026/' . str_pad((string) ++->seq, 3, '0', STR_PAD_LEFT), 'invoice_date' => today(), 'order_client_id' => $this->client->id, 'client_name' => 'Budi']);
         $invoice->items()->create(['item_name' => 'Website', 'item_qty' => 1, 'item_price' => $price]);
 
         return $invoice;
