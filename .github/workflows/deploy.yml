@@ -54,6 +54,36 @@ jobs:
           composer audit
           npm audit --audit-level=high
 
+  # Readiness check for moving the server to PHP 8.4 (8.2 security support ends 31 Dec 2026).
+  test-php84:
+    name: Tests on PHP 8.4
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, pdo_sqlite, gd, intl, bcmath
+          coverage: none
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies & build assets
+        run: |
+          composer install --no-interaction --prefer-dist --no-progress
+          npm ci
+          npm run build
+
+      - name: Run tests
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+          php artisan test
+
   deploy:
     name: Deploy to production
     needs: test
