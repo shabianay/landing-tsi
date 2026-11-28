@@ -4,6 +4,12 @@
         Ini <strong>invoice pelunasan</strong> untuk <a href="{{ route('admin.invoices.edit', $invoice->settles) }}" class="num font-semibold underline">{{ $invoice->settles->invoice_number }}</a>:
         DP <span class="num">@rp($invoice->credit_amount)</span> sudah dipotong, jadi yang ditagih <span class="num font-semibold">@rp($invoice->amount_due)</span>.
     </p>
+    @if (\App\Support\InvoiceSettlement::linkedFromOldPair($invoice))
+        <form method="POST" action="{{ route('admin.invoices.settlement.unlink', $invoice) }}" data-confirm="Lepas sambungan dengan {{ $invoice->settles->invoice_number }}? Pembayaran invoice ini dikembalikan seperti sebelum disambungkan." class="mt-2 text-right">
+            @csrf
+            <button type="submit" class="text-sm font-semibold text-red-700 hover:underline">Lepas sambungan</button>
+        </form>
+    @endif
 @elseif ($invoice->settledBy)
     <p class="mt-6 border border-emerald-300 bg-emerald-50 px-5 py-3.5 text-sm text-dark-300">
         DP ini sudah <strong>dilunasi</strong> lewat invoice <a href="{{ route('admin.invoices.edit', $invoice->settledBy) }}" class="num font-semibold underline">{{ $invoice->settledBy->invoice_number }}</a>. Di laporan, deal ini dihitung sekali.

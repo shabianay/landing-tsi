@@ -40,6 +40,19 @@ class InvoiceSettlementController extends Controller
             ->with('pdf_url', route('admin.invoices.pdf', $settlement));
     }
 
+    /** Undo a pair linked from the pairs page (restores the later invoice's payments). */
+    public function unlink(Invoice $invoice): RedirectResponse
+    {
+        if (! InvoiceSettlement::linkedFromOldPair($invoice)) {
+            return back()->withErrors(['settlement' => 'Hanya sambungan dari halaman "Sambungkan DP & pelunasan" yang bisa dilepas. Invoice pelunasan yang dibuat dengan tombol bisa dihapus bila salah.']);
+        }
+        $dpNumber = $invoice->settles?->invoice_number;
+        InvoiceSettlement::unlink($invoice);
+        ActivityLog::record('updated', $invoice, "Melepas sambungan {$invoice->invoice_number} dari {$dpNumber}");
+
+        return redirect()->route('admin.invoices.edit', $invoice)->with('success', "Sambungan dengan {$dpNumber} dilepas; pembayaran {$invoice->invoice_number} dikembalikan.");
+    }
+
     /** Preview of the existing pairs that would be linked (nothing changes yet). */
     public function pairs(): View
     {
